@@ -1,0 +1,209 @@
+/*------------------------------------
+  Buttons Bootstrap Style
+------------------------------------*/
+/* facebook */
+.btn-facebook {
+  color: #fff;
+  background-color: #3b5998;
+  border-color: #3b5998;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.btn-facebook:hover {
+  color: #fff;
+  background-color: #30497c;
+  border-color: #2d4373;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.btn-facebook:focus,
+.btn-facebook.focus {
+  box-shadow: 0 0 0 0.2rem rgba(59, 89, 152, 0.5);
+}
+
+.btn-facebook.disabled,
+.btn-facebook:disabled {
+  color: #fff;
+  background-color: #3b5998;
+  border-color: #3b5998;
+}
+
+.btn-facebook:not(:disabled):not(.disabled):active,
+.btn-facebook:not(:disabled):not(.disabled).active,
+.show > .btn-facebook.dropdown-toggle {
+  color: #fff;
+  background-color: #2d4373;
+  border-color: #293e6a;
+}
+
+.btn-facebook:not(:disabled):not(.disabled):active:focus,
+.btn-facebook:not(:disabled):not(.disabled).active:focus,
+.show > .btn-facebook.dropdown-toggle:focus {
+  box-shadow: 0 0 0 0.2rem rgba(59, 89, 152, 0.5);
+}
+
+/* google */
+.btn-google {
+  color: #fff;
+  background-color: #d14130;
+  border-color: #d14130;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.btn-google:hover {
+  color: #fff;
+  background-color: #b33628;
+  border-color: #a93325;
+}
+
+.btn-google:focus,
+.btn-google.focus {
+  box-shadow: 0 0 0 0.2rem rgba(209, 65, 48, 0.5);
+}
+
+.btn-google.disabled,
+.btn-google:disabled {
+  color: #fff;
+  background-color: #d14130;
+  border-color: #d14130;
+}
+
+.btn-google:not(:disabled):not(.disabled):active,
+.btn-google:not(:disabled):not(.disabled).active,
+.show > .btn-google.dropdown-toggle {
+  color: #fff;
+  background-color: #a93325;
+  border-color: #9e3023;
+}
+
+.btn-google:not(:disabled):not(.disabled):active:focus,
+.btn-google:not(:disabled):not(.disabled).active:focus,
+.show > .btn-google.dropdown-toggle:focus {
+  box-shadow: 0 0 0 0.2rem rgba(209, 65, 48, 0.5);
+}
+
+/* twitter */
+.btn-twitter {
+  color: #fff;
+  background-color: #1da1f2;
+  border-color: #1da1f2;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.btn-twitter:hover {
+  color: #fff;
+  background-color: #0d8ddc;
+  border-color: #0c85d0;
+}
+
+.btn-twitter:focus,
+.btn-twitter.focus {
+  box-shadow: 0 0 0 0.2rem rgba(29, 161, 242, 0.5);
+}
+
+.btn-twitter.disabled,
+.btn-twitter:disabled {
+  color: #fff;
+  background-color: #1da1f2;
+  border-color: #1da1f2;
+}
+
+.btn-twitter:not(:disabled):not(.disabled):active,
+.btn-twitter:not(:disabled):not(.disabled).active,
+.show > .btn-twitter.dropdown-toggle {
+  color: #fff;
+  background-color: #0c85d0;
+  border-color: #0b7ec4;
+}
+
+.btn-twitter:not(:disabled):not(.disabled):active:focus,
+.btn-twitter:not(:disabled):not(.disabled).active:focus,
+.show > .btn-twitter.dropdown-toggle:focus {
+  box-shadow: 0 0 0 0.2rem rgba(29, 161, 242, 0.5);
+}
+
+/* instagram */
+.btn-instagram {
+  color: #fff;
+  background-color: #3f729b;
+  border-color: #3f729b;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.btn-instagram:hover {
+  color: #fff;
+  background-color: #345e80;
+  border-color: #305777;
+}
+
+.btn-instagram:focus,
+.btn-instagram.focus {
+  box-shadow: 0 0 0 0.2rem rgba(63, 114, 155, 0.5);
+}
+
+.btn-instagram.disabled,
+.btn-instagram:disabled {
+  color: #fff;
+  background-color: #3f729b;
+  border-color: #3f729b;
+}
+
+.btn-instagram:not(:disabled):not(.disabled):active,
+.btn-instagram:not(:disabled):not(.disabled).active,
+.show > .btn-instagram.dropdown-toggle {
+  color: #fff;
+  background-color: #305777;
+  border-color: #2d516e;
+}
+
+.btn-instagram:not(:disabled):not(.disabled):active:focus,
+.btn-instagram:not(:disabled):not(.disabled).active:focus,
+.show > .btn-instagram.dropdown-toggle:focus {
+  box-shadow: 0 0 0 0.2rem rgba(63, 114, 155, 0.5);
+}
+
+/* github */
+.btn-github {
+  color: #fff;
+  background-color: #24292e;
+  border-color: #24292e;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.btn-github:hover {
+  color: #fff;
+  background-color: #131619;
+  border-color: #0e1011;
+}
+
+.btn-github:focus,
+.btn-github.focus {
+  box-shadow: 0 0 0 0.2rem rgba(36, 41, 46, 0.5);
+}
+
+.btn-github.disabled,
+.btn-github:disabled {
+  color: #fff;
+  background-color: #24292e;
+  border-color: #24292e;
+}
+
+.btn-github:not(:disabled):not(.disabled):active,
+.btn-github:not(:disabled):not(.disabled).active,
+.show > .btn-github.dropdown-toggle {
+  color: #fff;
+  background-color: #0e1011;
+  border-color: #08090a;
+}
+
+.btn-github:not(:disabled):not(.disabled):active:focus,
+.btn-github:not(:disabled):not(.disabled).active:focus,
+.show > .btn-github.dropdown-toggle:focus {
+  box-shadow: 0 0 0 0.2rem rgba(36, 41, 46, 0.5);
+}
