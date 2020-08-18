@@ -1,0 +1,10 @@
+#mainNav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin-bottom: 0;
+  z-index: 11;
+  opacity: 0.9;
+  height: 80px;
+}

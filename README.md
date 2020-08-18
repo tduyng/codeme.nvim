@@ -2,7 +2,7 @@
 
 Kit UI for Eventbrite using bootstrap
 
-Demo en ligne [https://adev42.com/kit-ui/index.html](https://adev42.com/kit-ui/index.html)
+Demo en ligne [https://adev42.com/kit-ui](https://adev42.com/kit-ui)
 
 <strong>
 Désolé mes correcteurs xD, ces composants sera très pire, pas vraiment répondu des critères de THP.
