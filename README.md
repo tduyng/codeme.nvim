@@ -5,8 +5,8 @@ Kit UI for Eventbrite using bootstrap
 Demo en ligne [https://adev42.com/kit-ui/index.html](https://adev42.com/kit-ui/index.html)
 
 <strong>
-Désolé mes correcteurs, ce ci sera très pire.
+Désolé mes correcteurs xD, ces composants sera très pire, pas vraiment répondu des critères de THP.
 
-J'ai juste fait ça très rapidement pour faire la correction de THP aujoud'hui (19/08/2020)
+J'ai juste fait ça très rapidement pour avoir la possibilté pour faire la correction de THP aujourd'hui (19/08/2020)
 
 </strong>
