@@ -7,7 +7,8 @@ Demo en ligne [https://adev42.com/kit-ui](https://adev42.com/kit-ui)
 <strong>
   
 Désolé mes correcteurs xD, 
-Ces composants n'ont pas vraiment répondu des critères de THP et n'ont pas lié trop par rapport à notre projet d'événements.
+
+Ces composants n'ont pas vraiment répondu des critères de THP et n'ont pas trop lié par rapport à notre projet d'événements.
 
 Parce que j'ai déjà commncé de faire l'interface pour le projet Eventbrite et j'ai travaillé sur plusieurs petits projets à coté. Je ne voudrais pas perde de temps de le refaire.
 
