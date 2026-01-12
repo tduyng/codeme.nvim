@@ -219,12 +219,27 @@ function M.get_stats(callback)
 		stdout_buffered = true,
 		on_stdout = function(_, data)
 			if data and #data > 0 then
-				local json_str = table.concat(data, "")
-				local ok, stats = pcall(vim.json.decode, json_str)
-				if ok then
-					callback(stats)
-				else
-					vim.notify("CodeMe: Failed to parse stats", vim.log.levels.ERROR)
+				-- Filter out empty strings and join the data
+				local filtered = vim.tbl_filter(function(line)
+					return line ~= ""
+				end, data)
+				
+				if #filtered > 0 then
+					local json_str = table.concat(filtered, "")
+					local ok, stats = pcall(vim.json.decode, json_str)
+					if ok and stats then
+						callback(stats)
+					else
+						vim.notify("CodeMe: Failed to parse stats - invalid JSON", vim.log.levels.ERROR)
+					end
+				end
+			end
+		end,
+		on_stderr = function(_, data)
+			if data and #data > 0 then
+				local errors = table.concat(data, "\n")
+				if errors ~= "" then
+					vim.notify("CodeMe error: " .. errors, vim.log.levels.ERROR)
 				end
 			end
 		end,

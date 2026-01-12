@@ -187,7 +187,6 @@ local function get_layout()
 			name = "footer",
 			lines = function(buf)
 				return {
-					{},
 					{ { "  <Tab>: Next | <S-Tab>: Prev | 1-3: Jump | q: Close", "commentfg" } },
 				}
 			end,
