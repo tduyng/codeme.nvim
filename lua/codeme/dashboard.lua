@@ -8,10 +8,15 @@ local state = {
 function M.show()
 	local codeme = require("codeme")
 
-	-- Get stats from server
+	-- Get all-time stats first
 	codeme.get_stats(function(stats)
-		require("codeme.profile").open(stats)
-	end)
+		-- Then get today-only stats for the Today tab
+		codeme.get_stats(function(today_stats)
+			-- Merge both into one stats object
+			stats.today_stats = today_stats
+			require("codeme.profile").open(stats)
+		end, true) -- true = today_only
+	end, false) -- false = all-time stats
 end
 
 function M.toggle()

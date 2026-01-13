@@ -1,40 +1,31 @@
 # codeme.nvim
 
-> 🎨 **Beautiful coding activity dashboard** for Neovim - Track your coding journey with style.
+> Beautiful coding activity dashboard for Neovim
 
-## ✨ Features
+## Features
 
-- Beautiful Tab-based Dashboard with 3 interactive views
-- GitHub-style Activity Calendar showing 7 months of coding history
-- Language Breakdown with visual bar graphs and smart summaries
-- Streak Tracking to maintain coding momentum
+- 100% private and local - all data stored in SQLite on your machine
+- Tab-based dashboard with 4 interactive views
+- Language breakdown with visual bar graphs and smart summaries
 - Auto-tracking on file save
-- Zero Config - works out of the box
+- Zero config - works out of the box
 - Theme-aware - adapts to your colorscheme
 
-## 📸 Preview
+## Privacy
 
-```
-┌─────────────────────────────────────────────────────┐
-│  1 󰃰 Overview  |  2 💻 Languages  |  3 📅 Activity  │
-├─────────────────────────────────────────────────────┤
-│                                                      │
-│  🔥 Streak: 7 days | 📊 Total: 24h 30m | 📝 12,543 lines │
-│                                                      │
-│   󱑈  Coding Time ~ 24h / 50h                        │
-│   ████████████████████░░░░░░░░░░ 48%                │
-│                                                      │
-│  <Tab>: Next Tab | <S-Tab>: Prev Tab | q: Close    │
-└─────────────────────────────────────────────────────┘
-```
+Your coding data never leaves your machine:
 
-## 📦 Installation
+- SQLite database stored locally at `~/.local/share/codeme/`
+- No accounts, no cloud sync, no telemetry
+- You own your data
+
+## Installation
 
 ### Prerequisites
 
-1. **Neovim >= 0.11+**
-2. **[volt.nvim](https://github.com/nvzone/volt)** - UI framework dependency
-3. **CodeMe server binary** - automatically installed on first use
+- Neovim >= 0.11
+- [volt](https://github.com/nvzone/volt) - UI framework dependency
+- [Codeme binary](https://github.com/tduyng/codeme) - auto-installed on first use
 
 ### Using lazy.nvim
 
@@ -53,7 +44,7 @@
 }
 ```
 
-### Using vim.pack
+### Using native vim.pack (Neovim 0.12+)
 
 ```lua
 vim.pack.add({
@@ -77,57 +68,45 @@ The codeme binary will be **automatically installed** on first use. If you prefe
 :CodeMeInstall
 ```
 
-## 🚀 Usage
+## Usage
 
 ### Commands
 
-| Command            | Description                              |
-| ------------------ | ---------------------------------------- |
-| `:CodeMe`          | Open the beautiful dashboard             |
-| `:CodeMeToggle`    | Toggle dashboard visibility              |
-| `:CodeMeToday`     | Show today's stats notification          |
-| `:CodeMeProjects`  | Show project breakdown                   |
-| `:CodeMeInstall`   | Install/update codeme binary from GitHub |
-| `:CodeMeVersion`   | Show installed codeme version            |
+| Command           | Description                              |
+| ----------------- | ---------------------------------------- |
+| `:CodeMe`         | Open the beautiful dashboard             |
+| `:CodeMeToggle`   | Toggle dashboard visibility              |
+| `:CodeMeToday`    | Show today's stats notification          |
+| `:CodeMeProjects` | Show project breakdown                   |
+| `:CodeMeInstall`  | Install/update codeme binary from GitHub |
+| `:CodeMeVersion`  | Show installed codeme version            |
 
-### Dashboard Navigation
+### Dashboard
 
-**Tab System:**
+**Navigation**
 
 - `<Tab>` or `L` - Next tab
 - `<S-Tab>` or `H` - Previous tab
 - `1`, `2`, `3` - Jump to specific tab
 - `q` or `<Esc>` - Close dashboard
 
-**Three Tabs:**
+#### Today
 
-#### 1. 󰃰 Overview
+![today](./docs/img/today.png)
 
-- Coding streak and total stats
-- Progress bars for time, lines, and projects
-- Quick stats table
+#### Overview
 
-#### 2. 💻 Languages
+![overview](./docs/img/overview.png)
 
-- Visual bar graphs showing language distribution
-- Summary text: "You code primarily in TypeScript, with Go and Lua close behind"
-- Top 5 languages with percentages
+#### Languages
 
-#### 3. 📅 Activity
+![languages](./docs/img/languages.png)
 
-- GitHub-style heatmap calendar
-- 7 months of coding activity
-- Color-coded activity levels (more active = darker green)
+#### Projects
 
-### Auto-tracking
+![projects](./docs/img/projects.png)
 
-The plugin automatically tracks your files when you save them (`BufWritePost`). Files are tracked with:
-
-- File path
-- Language/filetype
-- Line count
-
-## ⚙️ Configuration
+## Configuration
 
 ```lua
 require("codeme").setup({
@@ -138,7 +117,7 @@ require("codeme").setup({
   -- Tracking settings
   auto_track = true,          -- Track files on save
   track_on_idle = false,      -- Track on cursor idle (not implemented)
-  
+
   -- UI settings
   verbose = false,            -- Show tracking notifications
 })
@@ -151,51 +130,10 @@ vim.keymap.set("n", "<leader>cm", "<cmd>CodeMe<cr>", { desc = "Open CodeMe Dashb
 vim.keymap.set("n", "<leader>ct", "<cmd>CodeMeToggle<cr>", { desc = "Toggle CodeMe" })
 ```
 
-## 🎨 How It Works
-
-1. **Tracking:** When you save a file, the plugin calls `codeme track --file <path> --lang <ft> --lines <count>`
-2. **Storage:** The Go server stores activity data in SQLite
-3. **Visualization:** When you run `:CodeMe`, it fetches stats with `codeme stats --json` and renders the beautiful dashboard using volt.nvim
-
-## 🏗️ Architecture
-
-```
-codeme.nvim/
-├── lua/
-│   └── codeme/
-│       ├── init.lua        # Main setup and auto-tracking
-│       ├── dashboard.lua   # Entry point wrapper
-│       ├── profile.lua     # Tab-based UI system (3 tabs)
-│       ├── highlights.lua  # Theme-aware color system
-│       ├── util.lua        # Date/time/number formatting helpers
-│       └── stats.lua       # Stats notifications
-└── plugin/
-    └── codeme.lua          # Plugin commands
-```
-
-## 🌟 Inspiration
-
-This plugin is inspired by and uses design patterns from:
-
-- **[typr](https://github.com/nvzone/typr)** - Beautiful typing practice with gorgeous UI
-- **[triforce.nvim](https://github.com/gisketch/triforce.nvim)** - RPG-style coding gamification
-- **[volt.nvim](https://github.com/nvzone/volt)** - The UI framework that makes it all possible
-
-## 🤝 Contributing
-
-Contributions are welcome! This is a minimal, focused plugin. When adding features:
-
-1. Keep it simple and beautiful
-2. Don't add gamification (use triforce.nvim for that)
-3. Focus on coding insights and visualizations
-4. Maintain the clean UI aesthetic
-
-## 📄 License
+## License
 
 MIT
 
 ---
 
 Made with ❤️ for the Neovim community
-
-⭐ Star this repo if you find it useful!

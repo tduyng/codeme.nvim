@@ -212,9 +212,14 @@ function M.track_current_file()
 end
 
 -- Get stats from codeme binary
-function M.get_stats(callback)
+-- @param callback function to call with stats
+-- @param today_only boolean if true, only get today's stats
+function M.get_stats(callback, today_only)
 	local cmd = config.codeme_bin .. " stats --json"
-	
+	if today_only then
+		cmd = cmd .. " --today"
+	end
+
 	-- DEBUG: Log the command being executed
 	if config.verbose then
 		vim.notify("CodeMe: Running command: " .. cmd, vim.log.levels.DEBUG)
@@ -227,7 +232,7 @@ function M.get_stats(callback)
 			if config.verbose then
 				vim.notify(string.format("CodeMe: Received %d data items", #data), vim.log.levels.DEBUG)
 			end
-			
+
 			if data and #data > 0 then
 				-- Filter out empty strings AND lines that don't look like JSON
 				-- (to handle shell initialization output like "Using Node v22.11.0")
@@ -239,28 +244,31 @@ function M.get_stats(callback)
 					-- First real line should start with {
 					return line:match("^%s*{") or line:match("[,}%]]%s*$")
 				end, data)
-				
+
 				-- DEBUG: Log filtered count
 				if config.verbose then
 					vim.notify(string.format("CodeMe: After filtering: %d items", #filtered), vim.log.levels.DEBUG)
 				end
-				
+
 				if #filtered > 0 then
 					local json_str = table.concat(filtered, "")
-					
+
 					-- DEBUG: Log JSON string info
 					if config.verbose then
 						vim.notify(string.format("CodeMe: JSON string length: %d", #json_str), vim.log.levels.DEBUG)
 					end
-					
+
 					local ok, stats = pcall(vim.json.decode, json_str)
 					if ok and stats then
 						callback(stats)
 					else
 						-- Enhanced error message with details
 						vim.notify(
-							string.format("CodeMe: Failed to parse stats - invalid JSON\nError: %s\nFirst 200 chars: %s",
-								tostring(stats), json_str:sub(1, 200)),
+							string.format(
+								"CodeMe: Failed to parse stats - invalid JSON\nError: %s\nFirst 200 chars: %s",
+								tostring(stats),
+								json_str:sub(1, 200)
+							),
 							vim.log.levels.ERROR
 						)
 					end
