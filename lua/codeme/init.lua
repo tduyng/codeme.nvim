@@ -214,25 +214,55 @@ end
 -- Get stats from codeme binary
 function M.get_stats(callback)
 	local cmd = config.codeme_bin .. " stats --json"
+	
+	-- DEBUG: Log the command being executed
+	if config.verbose then
+		vim.notify("CodeMe: Running command: " .. cmd, vim.log.levels.DEBUG)
+	end
 
 	vim.fn.jobstart(cmd, {
 		stdout_buffered = true,
 		on_stdout = function(_, data)
+			-- DEBUG: Log raw data received
+			if config.verbose then
+				vim.notify(string.format("CodeMe: Received %d data items", #data), vim.log.levels.DEBUG)
+			end
+			
 			if data and #data > 0 then
 				-- Filter out empty strings and join the data
 				local filtered = vim.tbl_filter(function(line)
 					return line ~= ""
 				end, data)
 				
+				-- DEBUG: Log filtered count
+				if config.verbose then
+					vim.notify(string.format("CodeMe: After filtering: %d items", #filtered), vim.log.levels.DEBUG)
+				end
+				
 				if #filtered > 0 then
 					local json_str = table.concat(filtered, "")
+					
+					-- DEBUG: Log JSON string info
+					if config.verbose then
+						vim.notify(string.format("CodeMe: JSON string length: %d", #json_str), vim.log.levels.DEBUG)
+					end
+					
 					local ok, stats = pcall(vim.json.decode, json_str)
 					if ok and stats then
 						callback(stats)
 					else
-						vim.notify("CodeMe: Failed to parse stats - invalid JSON", vim.log.levels.ERROR)
+						-- Enhanced error message with details
+						vim.notify(
+							string.format("CodeMe: Failed to parse stats - invalid JSON\nError: %s\nFirst 200 chars: %s",
+								tostring(stats), json_str:sub(1, 200)),
+							vim.log.levels.ERROR
+						)
 					end
+				else
+					vim.notify("CodeMe: No data after filtering empty lines", vim.log.levels.WARN)
 				end
+			else
+				vim.notify("CodeMe: No data received from stdout", vim.log.levels.WARN)
 			end
 		end,
 		on_stderr = function(_, data)
@@ -241,6 +271,11 @@ function M.get_stats(callback)
 				if errors ~= "" then
 					vim.notify("CodeMe error: " .. errors, vim.log.levels.ERROR)
 				end
+			end
+		end,
+		on_exit = function(_, code)
+			if code ~= 0 then
+				vim.notify(string.format("CodeMe: Command exited with code %d", code), vim.log.levels.ERROR)
 			end
 		end,
 	})
