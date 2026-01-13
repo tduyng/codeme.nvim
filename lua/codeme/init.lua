@@ -229,9 +229,15 @@ function M.get_stats(callback)
 			end
 			
 			if data and #data > 0 then
-				-- Filter out empty strings and join the data
+				-- Filter out empty strings AND lines that don't look like JSON
+				-- (to handle shell initialization output like "Using Node v22.11.0")
 				local filtered = vim.tbl_filter(function(line)
-					return line ~= ""
+					if line == "" then
+						return false
+					end
+					-- Only accept lines that start with { or are part of JSON
+					-- First real line should start with {
+					return line:match("^%s*{") or line:match("[,}%]]%s*$")
 				end, data)
 				
 				-- DEBUG: Log filtered count
