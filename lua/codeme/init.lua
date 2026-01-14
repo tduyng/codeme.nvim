@@ -9,7 +9,17 @@ local config = {
 	track_on_idle = false, -- Track on cursor idle (not implemented yet)
 	verbose = false, -- Show tracking notifications
 	auto_install = true, -- Auto-install binary if not found
+	-- Goals configuration
+	goals = {
+		daily_hours = 4, -- Daily goal in hours (set to 0 to disable)
+		daily_lines = 500, -- Daily goal in lines (set to 0 to disable)
+	},
 }
+
+-- Expose config for other modules
+function M.get_config()
+	return config
+end
 
 function M.setup(opts)
 	config = vim.tbl_deep_extend("force", config, opts or {})

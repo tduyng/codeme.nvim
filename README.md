@@ -5,8 +5,15 @@
 ## Features
 
 - 100% private and local - all data stored in SQLite on your machine
-- Tab-based dashboard with 4 interactive views
-- Language breakdown with visual bar graphs and smart summaries
+- Tab-based dashboard with 6 interactive views
+- GitHub-style contribution heatmap (12 weeks)
+- Language and project breakdowns with visual bar graphs
+- Daily goals with progress tracking
+- Streak tracking with flame visualization
+- Achievements and gamification
+- Session tracking for focused coding periods
+- Trend comparisons (today vs yesterday, this week vs last)
+- Peak productivity insights
 - Auto-tracking on file save
 - Zero config - works out of the box
 - Theme-aware - adapts to your colorscheme
@@ -87,8 +94,17 @@ The codeme binary will be **automatically installed** on first use. If you prefe
 
 - `<Tab>` or `L` - Next tab
 - `<S-Tab>` or `H` - Previous tab
-- `1`, `2`, `3` - Jump to specific tab
+- `1-6` - Jump to specific tab
 - `q` or `<Esc>` - Close dashboard
+
+**Tabs**
+
+1. **☀️ Today** - Today's coding session with time, lines, files, languages, top files, sessions, hourly activity, and daily goal progress
+2. **📅 Weekly** - Week summary with comparison to last week and GitHub-style contribution heatmap
+3. **📊 Overview** - Overall stats with streak flames, coding trends, and totals
+4. **💡 Insights** - Peak productivity times, comparisons, and achievements
+5. **💻 Languages** - Top languages breakdown with time and lines
+6. **🔥 Projects** - Active projects breakdown
 
 #### Today
 
@@ -120,6 +136,12 @@ require("codeme").setup({
 
   -- UI settings
   verbose = false,            -- Show tracking notifications
+
+  -- Daily goals (set to 0 to disable)
+  goals = {
+    daily_hours = 4,          -- Daily goal in hours
+    daily_lines = 500,        -- Daily goal in lines
+  },
 })
 ```
 
@@ -129,6 +151,24 @@ require("codeme").setup({
 vim.keymap.set("n", "<leader>cm", "<cmd>CodeMe<cr>", { desc = "Open CodeMe Dashboard" })
 vim.keymap.set("n", "<leader>ct", "<cmd>CodeMeToggle<cr>", { desc = "Toggle CodeMe" })
 ```
+
+## Achievements
+
+Unlock achievements as you code:
+
+| Achievement | Description |
+|-------------|-------------|
+| 🎯 First Steps | Track your first coding activity |
+| 🔥 Getting Started | Maintain a 3-day coding streak |
+| ⚡ Weekly Warrior | Maintain a 7-day coding streak |
+| 👑 Monthly Master | Maintain a 30-day coding streak |
+| 💻 Code Machine | Write 1,000 lines of code |
+| 🚀 Prolific Programmer | Write 10,000 lines of code |
+| ⏰ Dedicated Developer | Code for 10 hours total |
+| 🏆 Century Coder | Code for 100 hours total |
+| 🌍 Polyglot | Code in 5 different languages |
+| 🌅 Early Bird | Code before 7 AM |
+| 🦉 Night Owl | Code after midnight |
 
 ## License
 
