@@ -3,7 +3,7 @@ local M = {}
 function M.setup()
 	local colors = M.get_colors()
 
-	-- Volt-style highlight groups
+	-- Highlight groups
 	vim.api.nvim_set_hl(0, "exgreen", { fg = colors.green, bold = true })
 	vim.api.nvim_set_hl(0, "exred", { fg = colors.red, bold = true })
 	vim.api.nvim_set_hl(0, "exyellow", { fg = colors.yellow, bold = true })
@@ -58,7 +58,6 @@ function M.get_colors()
 
 	if bg == "dark" then
 		return {
-			-- Volt colors
 			green = "#9ece6a",
 			red = "#f7768e",
 			yellow = "#e0af68",
@@ -90,7 +89,6 @@ function M.get_colors()
 		}
 	else
 		return {
-			-- Volt colors
 			green = "#22863a",
 			red = "#d73a49",
 			yellow = "#e36209",

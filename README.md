@@ -31,7 +31,6 @@ Your coding data never leaves your machine:
 ### Prerequisites
 
 - Neovim >= 0.11
-- [volt](https://github.com/nvzone/volt) - UI framework dependency
 - [Codeme binary](https://github.com/tduyng/codeme) - auto-installed on first use
 
 ### Using lazy.nvim
@@ -39,7 +38,6 @@ Your coding data never leaves your machine:
 ```lua
 {
   "tduyng/codeme.nvim",
-  dependencies = { "nvzone/volt" },
   config = function()
     require("codeme").setup({
       -- Optional configuration
@@ -56,7 +54,6 @@ Your coding data never leaves your machine:
 ```lua
 vim.pack.add({
   "https://github.com/tduyng/codeme.nvim",
-  "https://github.com/nvzone/volt",
 })
 
 require("codeme").setup()
@@ -156,19 +153,19 @@ vim.keymap.set("n", "<leader>ct", "<cmd>CodeMeToggle<cr>", { desc = "Toggle Code
 
 Unlock achievements as you code:
 
-| Achievement | Description |
-|-------------|-------------|
-| 🎯 First Steps | Track your first coding activity |
-| 🔥 Getting Started | Maintain a 3-day coding streak |
-| ⚡ Weekly Warrior | Maintain a 7-day coding streak |
-| 👑 Monthly Master | Maintain a 30-day coding streak |
-| 💻 Code Machine | Write 1,000 lines of code |
-| 🚀 Prolific Programmer | Write 10,000 lines of code |
-| ⏰ Dedicated Developer | Code for 10 hours total |
-| 🏆 Century Coder | Code for 100 hours total |
-| 🌍 Polyglot | Code in 5 different languages |
-| 🌅 Early Bird | Code before 7 AM |
-| 🦉 Night Owl | Code after midnight |
+| Achievement            | Description                      |
+| ---------------------- | -------------------------------- |
+| 🎯 First Steps         | Track your first coding activity |
+| 🔥 Getting Started     | Maintain a 3-day coding streak   |
+| ⚡ Weekly Warrior      | Maintain a 7-day coding streak   |
+| 👑 Monthly Master      | Maintain a 30-day coding streak  |
+| 💻 Code Machine        | Write 1,000 lines of code        |
+| 🚀 Prolific Programmer | Write 10,000 lines of code       |
+| ⏰ Dedicated Developer | Code for 10 hours total          |
+| 🏆 Century Coder       | Code for 100 hours total         |
+| 🌍 Polyglot            | Code in 5 different languages    |
+| 🌅 Early Bird          | Code before 7 AM                 |
+| 🦉 Night Owl           | Code after midnight              |
 
 ## License
 
