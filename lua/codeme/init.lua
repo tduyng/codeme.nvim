@@ -129,7 +129,6 @@ end
 -- Helper: Get git diff stats for a file
 local function get_git_diff(filepath)
 	-- Check if we're in a git repo
-	local git_root = vim.fn.system("git rev-parse --show-toplevel 2>/dev/null"):gsub("\n", "")
 	if vim.v.shell_error ~= 0 then
 		return nil -- Not a git repo
 	end
