@@ -135,9 +135,9 @@ local function tab_today()
 		end)
 
 		table.insert(lines, {})
-		table.insert(lines, { { "  🔥 Projects", "exgreen" } })
+		table.insert(lines, { { "  🔥 Top 10 Projects", "exgreen" } })
 		table.insert(lines, {})
-		for i = 1, math.min(3, #items) do
+		for i = 1, math.min(10, #items) do
 			local it = items[i]
 			table.insert(lines, {
 				{ "    " .. it.name, i == 1 and "excyan" or "commentfg" },
