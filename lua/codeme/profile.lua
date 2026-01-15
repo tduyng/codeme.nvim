@@ -455,6 +455,13 @@ function M.open(stats)
 	vim.keymap.set("n", "q", close, o)
 	vim.keymap.set("n", "<Esc>", close, o)
 
+	-- Auto-close when leaving the buffer
+	vim.api.nvim_create_autocmd("BufLeave", {
+		buffer = state.buf,
+		once = true,
+		callback = close,
+	})
+
 	render()
 end
 
