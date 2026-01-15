@@ -124,6 +124,29 @@ local function tab_today()
 		table.insert(lines, { { "  💻 No activity yet. Start coding!", "commentfg" } })
 	end
 
+	-- Projects (today)
+	if ts.projects and next(ts.projects) then
+		local items = {}
+		for name, stat in pairs(ts.projects) do
+			items[#items + 1] = { name = name, time = stat.time or 0, lines = stat.lines or 0 }
+		end
+		table.sort(items, function(a, b)
+			return a.time > b.time
+		end)
+
+		table.insert(lines, {})
+		table.insert(lines, { { "  🔥 Projects", "exgreen" } })
+		table.insert(lines, {})
+		for i = 1, math.min(3, #items) do
+			local it = items[i]
+			table.insert(lines, {
+				{ "    " .. it.name, i == 1 and "excyan" or "commentfg" },
+				{ "  " .. fmt_time(it.time), "normal" },
+				{ "  (" .. fmt_num(it.lines) .. " lines)", "commentfg" },
+			})
+		end
+	end
+
 	-- Hourly activity
 	local ha = ts.hourly_activity
 	if ha and next(ha) then
@@ -141,7 +164,11 @@ local function tab_today()
 				end
 				local pct = math.floor(sum / max * 100)
 				local hl = pct > 60 and "exgreen" or pct > 30 and "exyellow" or "commentfg"
-				table.insert(lines, { { "  " .. b[1] .. " ", "commentfg" }, { progress(pct, 25), hl } })
+				table.insert(lines, {
+					{ "  " .. b[1] .. " ", "commentfg" },
+					{ progress(pct, 25), hl },
+					{ string.format(" %3d%% (%d events)", pct, sum), "commentfg" },
+				})
 			end
 		end
 	end

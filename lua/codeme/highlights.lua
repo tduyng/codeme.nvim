@@ -8,6 +8,8 @@ function M.setup()
 	vim.api.nvim_set_hl(0, "exred", { fg = colors.red, bold = true })
 	vim.api.nvim_set_hl(0, "exyellow", { fg = colors.yellow, bold = true })
 	vim.api.nvim_set_hl(0, "exblue", { fg = colors.blue, bold = true })
+	vim.api.nvim_set_hl(0, "excyan", { fg = colors.cyan, bold = true })
+	vim.api.nvim_set_hl(0, "exmagenta", { fg = colors.magenta, bold = true })
 	vim.api.nvim_set_hl(0, "commentfg", { fg = colors.comment })
 	vim.api.nvim_set_hl(0, "linenr", { fg = colors.linenr })
 
@@ -62,6 +64,8 @@ function M.get_colors()
 			red = "#f7768e",
 			yellow = "#e0af68",
 			blue = "#7aa2f7",
+			cyan = "#7dcfff",
+			magenta = "#bb9af7",
 			comment = "#565f89",
 			linenr = "#3b4261",
 
@@ -93,6 +97,8 @@ function M.get_colors()
 			red = "#d73a49",
 			yellow = "#e36209",
 			blue = "#0366d6",
+			cyan = "#1b7c83",
+			magenta = "#6f42c1",
 			comment = "#6a737d",
 			linenr = "#d1d5da",
 
