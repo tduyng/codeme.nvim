@@ -16,7 +16,8 @@
 - Peak productivity insights
 - Auto-tracking on file save
 - Zero config - works out of the box
-- Theme-aware - adapts to your colorscheme
+- **Adaptive colorscheme** - automatically adapts to ANY Neovim colorscheme (Catppuccin, Gruvbox, Tokyo Night, Nord, etc.)
+- Smooth colorscheme transitions - updates instantly when you change themes
 
 ## Privacy
 
@@ -148,6 +149,35 @@ require("codeme").setup({
 vim.keymap.set("n", "<leader>cm", "<cmd>CodeMe<cr>", { desc = "Open CodeMe Dashboard" })
 vim.keymap.set("n", "<leader>ct", "<cmd>CodeMeToggle<cr>", { desc = "Toggle CodeMe" })
 ```
+
+## Colorscheme Support
+
+CodeMe automatically adapts to **ANY** Neovim colorscheme! It intelligently extracts colors from your active theme's highlight groups, ensuring the dashboard always looks beautiful and cohesive.
+
+### How it works
+
+- **Automatic color extraction** - Colors are pulled from standard highlight groups (String, Function, Error, etc.)
+- **Instant updates** - Dashboard colors update automatically when you change colorschemes
+- **Universal compatibility** - Works with ALL colorschemes: Catppuccin, Gruvbox, Tokyo Night, Nord, Everforest, Kanagawa, and more
+- **Graceful fallbacks** - If a color isn't found, it intelligently falls back to ensure nothing breaks
+
+### Example
+
+```lua
+-- Switch colorscheme anytime - CodeMe adapts instantly!
+vim.cmd.colorscheme("catppuccin")
+vim.cmd("CodeMe")
+
+-- Change to Gruvbox - dashboard colors update automatically
+vim.cmd.colorscheme("gruvbox")
+vim.cmd("CodeMe")
+
+-- Try Tokyo Night - perfect color harmony maintained
+vim.cmd.colorscheme("tokyonight")
+vim.cmd("CodeMe")
+```
+
+No configuration needed - it just works! The dashboard will always match your editor's aesthetic.
 
 ## Achievements
 

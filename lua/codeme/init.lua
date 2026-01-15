@@ -25,7 +25,9 @@ function M.setup(opts)
 	config = vim.tbl_deep_extend("force", config, opts or {})
 
 	-- Setup highlights
-	require("codeme.highlights").setup()
+	local highlights = require("codeme.highlights")
+	highlights.setup()
+	highlights.setup_autocmd() -- Auto-reload on colorscheme change
 
 	-- Check if binary is installed
 	local installer = require("codeme.installer")
