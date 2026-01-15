@@ -120,7 +120,7 @@ function M.progress(pct, w, filled_hl)
 	}
 end
 
--- GitHub-style heatmap
+-- GitHub-style heatmap with month context and date ranges
 function M.heatmap(days)
 	if not days or #days == 0 then
 		return { { { "  No activity data", "commentfg" } } }
@@ -129,6 +129,42 @@ function M.heatmap(days)
 	local chars = { "░", "▒", "▓", "█", "█" }
 	local colors = { "commentfg", "exblue", "excyan", "exgreen", "exyellow" }
 
+	-- Helper: Parse date string "2026-01-15" into components
+	local function parse_date(date_str)
+		local year, month, day = date_str:match("(%d+)-(%d+)-(%d+)")
+		return {
+			year = tonumber(year),
+			month = tonumber(month),
+			day = tonumber(day),
+		}
+	end
+
+	-- Helper: Get month name from date
+	local function get_month_name(date_str)
+		local parsed = parse_date(date_str)
+		local timestamp = os.time({ year = parsed.year, month = parsed.month, day = 1 })
+		return os.date("%B", timestamp), os.date("%b", timestamp) -- Full & short
+	end
+
+	-- Helper: Format date as "02/12" or "02/12'25" label with optional year (dd/mm format)
+	local function format_week_label(date_str, show_year)
+		local parsed = parse_date(date_str)
+		local year_suffix = show_year and string.format("'%02d", parsed.year % 100) or "   "
+		return string.format("%02d/%02d%s", parsed.day, parsed.month, year_suffix)
+	end
+
+	-- Helper: Calculate date range for a week (numeric format: "02-08" or "30-05")
+	local function get_week_range(week)
+		local first_day = week[1].date -- Monday
+		local last_day = week[7].date -- Sunday
+
+		local f_parsed = parse_date(first_day)
+		local l_parsed = parse_date(last_day)
+
+		-- Just show day numbers: "02-08" or "30-05" (for cross-month)
+		return string.format("%02d-%02d", f_parsed.day, l_parsed.day)
+	end
+
 	-- Group into weeks
 	local weeks = {}
 	for i = 1, #days, 7 do
@@ -136,38 +172,163 @@ function M.heatmap(days)
 		for j = i, math.min(i + 6, #days) do
 			week[#week + 1] = days[j]
 		end
-		weeks[#weeks + 1] = week
+		if #week == 7 then -- Only add complete weeks
+			weeks[#weeks + 1] = week
+		end
 	end
 
+	-- Calculate statistics for summary
+	local max_time = 0
+	local active_days = 0
+	for _, day in ipairs(days) do
+		if day.time and day.time > 0 then
+			active_days = active_days + 1
+			max_time = math.max(max_time, day.time)
+		end
+	end
+
+	local consistency = #days > 0 and math.floor((active_days / #days) * 100) or 0
+
+	-- Format max time as "4h 10m"
+	local function format_time(seconds)
+		local hours = math.floor(seconds / 3600)
+		local minutes = math.floor((seconds % 3600) / 60)
+		if hours > 0 then
+			return string.format("%dh %dm", hours, minutes)
+		else
+			return string.format("%dm", minutes)
+		end
+	end
+
+	-- Group weeks by month (we'll use this to determine when to show year)
+	local weeks_by_month = {}
+	local month_order = {} -- Preserve order
+	local prev_year = nil
+
+	for wi, week in ipairs(weeks) do
+		local first_day = week[1] -- Monday of this week
+		local month_name, month_abbr = get_month_name(first_day.date)
+		local parsed = parse_date(first_day.date)
+		local month_key = string.format("%d-%02d", parsed.year, parsed.month)
+
+		-- Determine if we should show year (first week of new year or first week overall)
+		local show_year = (prev_year ~= parsed.year)
+		prev_year = parsed.year
+
+		if not weeks_by_month[month_key] then
+			weeks_by_month[month_key] = {
+				month_name = month_name,
+				month_abbr = month_abbr,
+				year = parsed.year,
+				weeks = {},
+				order = #month_order + 1,
+			}
+			table.insert(month_order, month_key)
+		end
+
+		table.insert(weeks_by_month[month_key].weeks, {
+			index = wi,
+			week = week,
+			label = format_week_label(first_day.date, show_year),
+			range = get_week_range(week),
+			show_year = show_year,
+		})
+	end
+
+	-- Find current week (contains today)
+	local today = os.date("%Y-%m-%d")
+	local current_week_index = nil
+
+	for wi, week in ipairs(weeks) do
+		for _, day in ipairs(week) do
+			if day.date == today then
+				current_week_index = wi
+				break
+			end
+		end
+		if current_week_index then
+			break
+		end
+	end
+
+	-- Build output
 	local out = {
-		{ { "  Activity (Last " .. #weeks .. " Weeks)", "exgreen" } },
+		{ { "  🗓️  Activity Heatmap (Last " .. #weeks .. " Weeks)", "exgreen" } },
+		{
+			{ "  📊 ", "exyellow" },
+			{ string.format("%d/%d days active", active_days, #days), "normal" },
+			{ string.format(" (%d%% consistency)", consistency), "commentfg" },
+			{ " • Peak: ", "commentfg" },
+			{ format_time(max_time), "exgreen" },
+		},
 		{},
 	}
 
-	-- Day labels
-	local header = { { "      ", "normal" } }
+	-- Day labels header (show once at the top) - use day abbreviations
+	local header = { { "          ", "normal" } }
 	for _, d in ipairs({ "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }) do
 		table.insert(header, { d .. " ", "commentfg" })
 	end
 	table.insert(out, header)
 
-	-- Weeks
-	for wi, week in ipairs(weeks) do
-		local line = { { string.format("  W%02d ", wi), "commentfg" } }
-		for _, day in ipairs(week) do
-			local lvl = math.max(0, math.min(4, day.level or 0))
-			table.insert(line, { chars[lvl + 1] .. "   ", colors[lvl + 1] })
+	-- Render all weeks continuously (no blank lines between months)
+	for _, month_key in ipairs(month_order) do
+		local month_data = weeks_by_month[month_key]
+
+		-- Render weeks in this month continuously
+		for _, week_info in ipairs(month_data.weeks) do
+			local is_current = (week_info.index == current_week_index)
+
+			-- Week label with fixed width for perfect alignment (e.g., "12/02'25" or "01/06   ")
+			local line = { { "  " .. week_info.label .. " ", week_info.show_year and "exgreen" or "commentfg" } }
+
+			-- Day cells
+			for _, day in ipairs(week_info.week) do
+				local lvl = math.max(0, math.min(4, day.level or 0))
+
+				-- Mark current week's today with *
+				local is_today = (day.date == today)
+				local cell = chars[lvl + 1]
+
+				if day.level == -1 then
+					-- Future day
+					table.insert(line, { "·   ", "commentfg" })
+				else
+					if is_today and is_current then
+						table.insert(line, { cell .. "*  ", colors[lvl + 1] })
+					else
+						table.insert(line, { cell .. "   ", colors[lvl + 1] })
+					end
+				end
+			end
+
+			-- Date range on right
+			table.insert(line, { "  " .. week_info.range, "commentfg" })
+
+			-- THIS WEEK indicator
+			if is_current then
+				table.insert(line, { " ⭐", "exyellow" })
+			end
+
+			table.insert(out, line)
 		end
-		table.insert(out, line)
 	end
 
-	-- Legend
+	-- Legend (compact)
 	table.insert(out, {})
-	local legend = { { "  Less ", "commentfg" } }
-	for i = 1, 5 do
-		table.insert(legend, { chars[i] .. " ", colors[i] })
-	end
-	table.insert(legend, { "More", "commentfg" })
+	local legend = { { "  ", "commentfg" } }
+	table.insert(legend, { "░", "commentfg" })
+	table.insert(legend, { " None  ", "commentfg" })
+	table.insert(legend, { "▒", "exblue" })
+	table.insert(legend, { " Low  ", "commentfg" })
+	table.insert(legend, { "▓", "excyan" })
+	table.insert(legend, { " Medium  ", "commentfg" })
+	table.insert(legend, { "█", "exgreen" })
+	table.insert(legend, { " High  ", "commentfg" })
+	table.insert(legend, { "█", "exyellow" })
+	table.insert(legend, { " Peak  ", "commentfg" })
+	table.insert(legend, { "·", "commentfg" })
+	table.insert(legend, { " Future", "commentfg" })
 	table.insert(out, legend)
 
 	return out
