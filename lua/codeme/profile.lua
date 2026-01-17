@@ -415,11 +415,18 @@ local function tab_overview()
 	-- Milestones (based on total time)
 	local total_hours = math.floor((s.total_time or 0) / 3600)
 	local milestones = {
-		{ threshold = 500, name = "Master Coder", icon = "👑" },
-		{ threshold = 250, name = "Expert Programmer", icon = "🎖️" },
-		{ threshold = 100, name = "Century Coder", icon = "🏆" },
-		{ threshold = 50, name = "Committed Developer", icon = "⭐" },
-		{ threshold = 10, name = "Dedicated Developer", icon = "⏰" },
+		{ threshold = 50000, name = "Legendary Coder", icon = "👑" },
+		{ threshold = 25000, name = "Master Coder", icon = "🏅" },
+		{ threshold = 10000, name = "Elite Engineer", icon = "🎖️" },
+		{ threshold = 7500, name = "Expert Programmer", icon = "🏆" },
+		{ threshold = 5000, name = "Senior Developer", icon = "💎" },
+		{ threshold = 3000, name = "Seasoned Developer", icon = "🔥" },
+		{ threshold = 1500, name = "Advanced Coder", icon = "🚀" },
+		{ threshold = 1000, name = "Century Coder", icon = "💯" },
+		{ threshold = 750, name = "Committed Developer", icon = "⭐" },
+		{ threshold = 500, name = "Dedicated Developer", icon = "⏰" },
+		{ threshold = 250, name = "Rising Developer", icon = "🌱" },
+		{ threshold = 100, name = "New Contributor", icon = "🐣" },
 	}
 
 	-- Find next milestone
