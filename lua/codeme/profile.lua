@@ -67,47 +67,52 @@ local function calculate_hourly_time(sessions)
 	end
 
 	for _, session in ipairs(sessions) do
-		-- Parse RFC3339 timestamps
 		local start_str = session.start or ""
 		local end_str = session["end"] or ""
-
-		-- Extract hour from ISO timestamp (format: 2026-01-15T08:19:31+01:00)
-		local start_hour = tonumber(start_str:match("T(%d%d):"))
-		local end_hour = tonumber(end_str:match("T(%d%d):"))
 		local duration = session.duration or 0
 
-		if start_hour and end_hour and duration > 0 then
-			-- Simple case: session within same hour
-			if start_hour == end_hour then
-				hourly_time[start_hour] = hourly_time[start_hour] + duration
-			else
-				-- Session spans multiple hours - distribute proportionally
-				-- Extract minutes for more accurate distribution
-				local start_min = tonumber(start_str:match("T%d%d:(%d%d):")) or 0
-				local end_min = tonumber(end_str:match("T%d%d:(%d%d):")) or 0
+		if duration <= 0 then
+			goto continue
+		end
 
-				-- Calculate seconds remaining in start hour
-				local first_hour_seconds = (60 - start_min) * 60
-				hourly_time[start_hour] = hourly_time[start_hour] + math.min(first_hour_seconds, duration)
+		local start_hour = tonumber(start_str:match("T(%d%d):"))
+		local end_hour = tonumber(end_str:match("T(%d%d):"))
 
-				-- Calculate seconds in end hour
-				local remaining = duration - first_hour_seconds
-				if remaining > 0 and end_hour ~= start_hour then
-					local last_hour_seconds = end_min * 60
-					hourly_time[end_hour] = hourly_time[end_hour] + math.min(last_hour_seconds, remaining)
+		if not start_hour or not end_hour then
+			goto continue
+		end
 
-					-- Fill complete hours in between
-					remaining = remaining - last_hour_seconds
-					local current_hour = (start_hour + 1) % 24
-					while remaining > 0 and current_hour ~= end_hour do
-						local hour_seconds = math.min(3600, remaining)
-						hourly_time[current_hour] = hourly_time[current_hour] + hour_seconds
-						remaining = remaining - hour_seconds
-						current_hour = (current_hour + 1) % 24
-					end
+		-- Same hour
+		if start_hour == end_hour then
+			hourly_time[start_hour] = hourly_time[start_hour] + duration
+		else
+			local start_min = tonumber(start_str:match("T%d%d:(%d%d):")) or 0
+			local end_min = tonumber(end_str:match("T%d%d:(%d%d):")) or 0
+
+			-- First hour
+			local first_hour = (60 - start_min) * 60
+			hourly_time[start_hour] = hourly_time[start_hour] + math.min(first_hour, duration)
+
+			local remaining = duration - first_hour
+			if remaining > 0 then
+				-- Last hour
+				local last_hour = end_min * 60
+				hourly_time[end_hour] = hourly_time[end_hour] + math.min(last_hour, remaining)
+
+				remaining = remaining - last_hour
+
+				-- Full hours in between
+				local h = (start_hour + 1) % 24
+				while remaining > 0 and h ~= end_hour do
+					local chunk = math.min(3600, remaining)
+					hourly_time[h] = hourly_time[h] + chunk
+					remaining = remaining - chunk
+					h = (h + 1) % 24
 				end
 			end
 		end
+
+		::continue::
 	end
 
 	return hourly_time
@@ -164,25 +169,39 @@ local function tab_today()
 	local today_sessions = s.sessions or {}
 	if #today_sessions > 0 then
 		table.insert(lines, {})
-		table.insert(lines, { { "  📊 Activity Timeline", "exgreen" } })
+		table.insert(lines, { { "  📊 Activity Distribution", "exgreen" } })
 
 		-- Calculate hourly time distribution
 		local hourly_time = calculate_hourly_time(today_sessions)
 
-		-- Find max time for scaling
-		local max_time = 0
+		local total_time = 0
 		for i = 0, 23 do
-			max_time = math.max(max_time, hourly_time[i] or 0)
+			total_time = total_time + (hourly_time[i] or 0)
 		end
 
-		if max_time > 0 then
-			for _, b in ipairs({ { "00-06", 0, 5 }, { "06-12", 6, 11 }, { "12-18", 12, 17 }, { "18-24", 18, 23 } }) do
+		if total_time > 0 then
+			local blocks = {
+				{ "00–04", 0, 3 },
+				{ "04–08", 4, 7 },
+				{ "08–12", 8, 11 },
+				{ "12–16", 12, 15 },
+				{ "16–20", 16, 19 },
+				{ "20–24", 20, 23 },
+			}
+			for _, b in ipairs(blocks) do
 				local sum = 0
 				for h = b[2], b[3] do
 					sum = sum + (hourly_time[h] or 0)
 				end
-				local pct = math.floor(sum / max_time * 100)
-				local hl = pct > 60 and "exgreen" or pct > 30 and "exyellow" or "commentfg"
+				local pct = math.floor(sum / total_time * 100)
+				local hl
+				if pct >= 35 then
+					hl = "exgreen"
+				elseif pct >= 20 then
+					hl = "exyellow"
+				else
+					hl = "commentfg"
+				end
 				table.insert(lines, {
 					{ "  " .. b[1] .. " ", "commentfg" },
 					{ progress(pct, 25), hl },
@@ -732,7 +751,7 @@ local function tab_languages()
 
 	-- Language table
 	local tbl = { { "Language", "Time", "Lines", "Files", "%" } }
-	for i = 1, math.min(10, #items) do
+	for i = 1, math.min(30, #items) do
 		local it = items[i]
 		local pct = total > 0 and math.floor(it.time / total * 100) or 0
 		tbl[#tbl + 1] =
@@ -742,28 +761,20 @@ local function tab_languages()
 		table.insert(lines, l)
 	end
 	table.insert(lines, {})
-
 	-- Language insights
-	if #items > 0 then
-		table.insert(lines, { { "  📊 Language Insights", "exgreen" } })
-		table.insert(lines, {})
+	table.insert(lines, { { "  📊 Language Insights", "exgreen" } })
+	table.insert(lines, {})
 
-		-- Favorite language (most time)
-		table.insert(lines, {
-			{ "  ⭐ Favorite: ", "commentfg" },
-			{ items[1].name, "exgreen" },
-			{ string.format(" (%s, %d%%)", fmt_time(items[1].time), math.floor(items[1].time / total * 100)), "commentfg" },
-		})
+	local favorite = items[1]
 
-		-- Language diversity
-		local diversity = #items
-		local diversity_text = diversity >= 5 and "Polyglot" or diversity >= 3 and "Multi-language" or "Focused"
-		table.insert(lines, {
-			{ "  🌍 Diversity: ", "commentfg" },
-			{ diversity_text, diversity >= 5 and "exgreen" or "exyellow" },
-			{ string.format(" (%d languages)", diversity), "commentfg" },
-		})
-	end
+	table.insert(lines, {
+		{ "  ⭐ Favorite: ", "commentfg" },
+		{ favorite.name, "exgreen" },
+		{
+			string.format(" (%s, %d%%)", fmt_time(favorite.time), math.floor(favorite.time / total * 100)),
+			"commentfg",
+		},
+	})
 
 	return lines
 end
@@ -792,7 +803,7 @@ local function tab_projects()
 
 	-- Projects table
 	local tbl = { { "Project", "Time", "Lines", "Files", "%" } }
-	for i = 1, math.min(10, #items) do
+	for i = 1, math.min(30, #items) do
 		local it = items[i]
 		local pct = total > 0 and math.floor(it.time / total * 100) or 0
 		tbl[#tbl + 1] =

@@ -11,8 +11,8 @@ local config = {
 	auto_install = true, -- Auto-install binary if not found
 	-- Goals configuration
 	goals = {
-		daily_hours = 4, -- Daily goal in hours (set to 0 to disable)
-		daily_lines = 500, -- Daily goal in lines (set to 0 to disable)
+		daily_hours = 5, -- Daily goal in hours (set to 0 to disable)
+		daily_lines = 1000, -- Daily goal in lines (set to 0 to disable)
 	},
 }
 
