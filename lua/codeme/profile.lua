@@ -491,6 +491,22 @@ local function tab_overview()
 	return lines
 end
 
+local function get_streak_display(streak)
+	if streak == 0 then
+		return "─", "commentfg"
+	elseif streak < 3 then
+		return string.rep("🔥", streak), "exred"
+	elseif streak < 7 then
+		return string.rep("🔥", 3) .. " +" .. (streak - 3), "exred"
+	elseif streak < 30 then
+		return "🔥🔥🔥 ⚡ +" .. (streak - 3), "exred"
+	elseif streak < 100 then
+		return "🔥🔥🔥 ⚡⚡ +" .. (streak - 3), "exred"
+	else
+		return "🔥🔥🔥 ⚡⚡⚡ +" .. (streak - 3), "exred"
+	end
+end
+
 local function tab_insights()
 	local s = state.stats
 	local lines = {}
@@ -664,13 +680,10 @@ local function tab_insights()
 	})
 
 	local streak = s.streak or 0
-	local streak_text = streak > 0 and string.rep("🔥", math.min(streak, 7)) or "No streak"
-	if streak > 7 then
-		streak_text = streak_text .. " +" .. (streak - 7)
-	end
+	local streak_icon, streak_hl = get_streak_display(streak)
 	table.insert(lines, {
 		{ "  " .. pad_right("Current Streak:", col1_width), "commentfg" },
-		{ streak_text, streak > 0 and "exred" or "commentfg" },
+		{ streak_icon, streak_hl },
 		{ string.format("  (%d days)", streak), "commentfg" },
 	})
 
