@@ -234,7 +234,6 @@ local function tab_today()
 		for _, l in ipairs(ui.table(tbl, state.width - 8)) do
 			table.insert(lines, l)
 		end
-		
 		-- Show programming language count for quick overview
 		if ts.programming_languages and next(ts.programming_languages) then
 			local prog_count = 0
@@ -798,14 +797,16 @@ local function tab_languages()
 			prog_count = prog_count + 1
 			table.insert(prog_items, { name = name, time = stat.time or 0, lines = stat.lines or 0 })
 		end
-		
+
 		-- Sort programming languages by time
-		table.sort(prog_items, function(a, b) return a.time > b.time end)
-		
+		table.sort(prog_items, function(a, b)
+			return a.time > b.time
+		end)
+
 		table.insert(lines, {})
 		table.insert(lines, { { "  🌍 Polyglot Progress", "exgreen" } })
 		table.insert(lines, {})
-		
+
 		-- Polyglot achievements with progress
 		local achievements = {
 			{ threshold = 2, name = "Bilingual", icon = "🚀" },
@@ -813,26 +814,26 @@ local function tab_languages()
 			{ threshold = 10, name = "Polyglot Master", icon = "🧠" },
 			{ threshold = 15, name = "Code Polymath", icon = "🎓" },
 		}
-		
+
 		for _, achievement in ipairs(achievements) do
 			local achieved = prog_count >= achievement.threshold
 			local icon = achieved and achievement.icon or "🔒"
 			local status_color = achieved and "exgreen" or "commentfg"
 			local progress_text = string.format("%d/%d languages", prog_count, achievement.threshold)
-			
+
 			table.insert(lines, {
 				{ "  " .. icon .. " " .. achievement.name .. ": ", status_color },
 				{ progress_text, "commentfg" },
 			})
 		end
-		
+
 		table.insert(lines, {})
 		table.insert(lines, {
 			{ "  🔥 Programming Languages: ", "commentfg" },
 			{ tostring(prog_count), "exgreen" },
 			{ " total", "commentfg" },
 		})
-		
+
 		-- Show top programming languages
 		if #prog_items > 0 then
 			table.insert(lines, {})

@@ -9,6 +9,10 @@ M.config = {
 	codeme_bin = os.getenv("CODEME_BIN") or "codeme",
 	verbose = false,
 	auto_track = true,
+	goals = {
+		daily_hours = 4, -- Daily goal in hours
+		daily_lines = 500, -- Daily goal in lines
+	},
 }
 
 function M.setup(opts)
