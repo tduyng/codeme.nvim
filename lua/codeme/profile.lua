@@ -224,7 +224,7 @@ local function tab_today()
 		end)
 
 		local tbl = { { "Language", "Time", "Lines", "%" } }
-		for i = 1, math.min(5, #items) do
+		for i = 1, math.min(10, #items) do
 			local it = items[i]
 			local pct = total > 0 and math.floor(it.time / total * 100) or 0
 			tbl[#tbl + 1] = { it.name, fmt_time(it.time), fmt_num(it.lines), progress(pct, 15) .. " " .. pct .. "%" }
