@@ -1,4 +1,4 @@
--- CodeMe Tracker
+-- CodeMe Tracker lua
 
 local M = {}
 
@@ -67,8 +67,7 @@ local function send_to_backend(filepath, lines_changed, opts)
 		return
 	end
 
-	local line_count = vim.api.nvim_buf_line_count(bufnr)
-	local language = vim.bo[bufnr].filetype ~= "" and vim.bo[bufnr].filetype or "unknown"
+	local language = vim.bo[bufnr].filetype ~= "" and vim.bo[bufnr].filetype or "n/a"
 
 	local cmd = {
 		opts.codeme_bin or "codeme",
@@ -77,17 +76,17 @@ local function send_to_backend(filepath, lines_changed, opts)
 		filepath,
 		"--lang",
 		language,
+		"--editor",
+		"neovim",
 		"--lines",
 		tostring(lines_changed),
-		"--total",
-		tostring(line_count),
 	}
 
 	vim.fn.jobstart(cmd, {
 		detach = true,
 		on_exit = function(_, code)
 			if opts.verbose then
-				local heartbeat_type = opts.heartbeat_type or "unknown"
+				local heartbeat_type = opts.heartbeat_type or "n/a"
 				if code == 0 then
 					vim.notify(
 						string.format(

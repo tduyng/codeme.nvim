@@ -6,7 +6,7 @@ local api = vim.api
 function M.open(stats)
 	state.set_stats(stats)
 	state.tab = 1
-	state.width = math.min(110, math.floor(vim.o.columns * 0.85))
+	state.width = math.min(130, math.floor(vim.o.columns * 0.9))
 	state.ns = api.nvim_create_namespace("codeme")
 
 	-- Calculate height by rendering all tabs once

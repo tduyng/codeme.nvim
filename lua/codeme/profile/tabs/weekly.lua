@@ -1,6 +1,5 @@
 local state = require("codeme.profile.state")
 local fmt = require("codeme.profile.formatters")
-local helpers = require("codeme.profile.helpers")
 local ui = require("codeme.ui")
 
 local M = {}
@@ -49,47 +48,52 @@ function M.render()
 	local s = state.stats
 	local lines = {}
 
-	-- Header (using backend data)
-	local t_trend, t_hl = fmt.trend(s.week_time or 0, s.last_week_time or 0)
+	local this_week = s.this_week or {}
+	local last_week = s.last_week or {}
+
+	local week_time = this_week.total_time or 0
+	local last_week_time = last_week.total_time or 0
+	local week_lines = this_week.total_lines or 0
+
+	-- Header
+	local t_trend, t_hl = fmt.trend(week_time, last_week_time)
 
 	table.insert(lines, {})
 	table.insert(lines, {
 		{ "  📅 Weekly Summary  ", "exgreen" },
 		{ "⏱️  ", "commentfg" },
-		{ fmt.fmt_time(s.week_time or 0), "exgreen" },
+		{ fmt.fmt_time(week_time), "exgreen" },
 		{ t_trend, t_hl },
 		{ "  │  📝 ", "commentfg" },
-		{ fmt.fmt_num(s.week_lines or 0), "exyellow" },
+		{ fmt.fmt_num(week_lines), "exyellow" },
 	})
 	table.insert(lines, {})
 
 	-- Calculate week boundaries
 	local week_monday, week_sunday, today = M.get_week_boundaries()
 
-	-- Daily Breakdown Table (using backend daily_activity)
 	local daily_activity = s.daily_activity or {}
 
 	table.insert(lines, { { "  📊 Daily Breakdown (Mon-Sun)", "exgreen" } })
 	table.insert(lines, {})
 
 	local day_names = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" }
-	local tbl = { { "Day", "Date", "Time", "Lines", "Session count", "Trend" } }
+	local tbl = { { "Day", "Date", "Time", "Lines", "Sessions", "Trend" } }
 
 	local max_day_time = 0
 	local max_day_data = nil
 
 	for i = 1, 7 do -- 1=Monday, 7=Sunday
 		local day_name = day_names[i]
-
-		-- Calculate the actual date for this weekday in current week
 		local expected_date = M.get_weekday_date(i, week_monday)
 
-		-- Find daily stat for this date
 		local day_stat = daily_activity[expected_date]
 
 		if not day_stat then
-			day_stat = { time = 0, lines = 0, sessions = 0, session_count = 0 }
+			day_stat = { time = 0, lines = 0, files = 0 }
 		end
+
+		local session_count = this_week.session_count
 
 		if day_stat.time > max_day_time then
 			max_day_time = day_stat.time
@@ -98,7 +102,7 @@ function M.render()
 				date = expected_date,
 				time = day_stat.time,
 				lines = day_stat.lines or 0,
-				sessions = day_stat.sessions or day_stat.session_count or 0,
+				sessions = session_count,
 			}
 		end
 
@@ -106,7 +110,7 @@ function M.render()
 		local date_label = expected_date:sub(6, 10) -- MM-DD format
 		local time_str = fmt.fmt_time(day_stat.time)
 		local lines_str = fmt.fmt_num(day_stat.lines or 0)
-		local sessions_str = tostring(day_stat.session_count or day_stat.sessions or 0)
+		local sessions_str = tostring(session_count)
 		local trend_str = day_stat.time > 0 and "↗" or "-"
 
 		-- Mark today with a star
@@ -114,7 +118,7 @@ function M.render()
 			day_label = day_label .. " ★"
 		end
 
-		-- Show "-" for future dates (after today)
+		-- Show "-" for future dates
 		if expected_date > today then
 			time_str = "-"
 			lines_str = "-"
@@ -138,11 +142,11 @@ function M.render()
 
 	table.insert(lines, {})
 
-	-- 📌 Week Summary (using backend records data)
+	-- 📌 Week Summary
 	table.insert(lines, { { "  📌 Week Summary", "exgreen" } })
 	table.insert(lines, {})
 
-	-- Most Productive Day (from backend records)
+	-- ✅ Most Productive Day (from backend records)
 	local records = s.records or {}
 	local most_productive_day = records.most_productive_day or {}
 
@@ -154,7 +158,7 @@ function M.render()
 			{ string.format(" (%s)", fmt.fmt_time(most_productive_day.time)), "exyellow" },
 		})
 
-		-- Session details for best day
+		-- Session details
 		if most_productive_day.sessions and most_productive_day.sessions > 0 then
 			table.insert(lines, {
 				{ "    ↳ Sessions: ", "commentfg" },
@@ -163,20 +167,18 @@ function M.render()
 			})
 		end
 
-		-- Top languages for best day (from backend)
-		local languages_count = helpers.safe_length(most_productive_day.languages)
-		if most_productive_day.languages and languages_count > 0 then
-			local languages_result = helpers.format_list(most_productive_day.languages)
+		-- Top languages
+		if most_productive_day.languages and #most_productive_day.languages > 0 then
+			local languages_result = table.concat(most_productive_day.languages, ", ")
 			table.insert(lines, {
 				{ "    ↳ Languages: ", "commentfg" },
 				{ languages_result, "exgreen" },
 			})
 		end
 
-		-- Main projects for best day (from backend)
-		local projects_count = helpers.safe_length(most_productive_day.projects)
-		if most_productive_day.projects and projects_count > 0 then
-			local projects_result = helpers.format_list(most_productive_day.projects)
+		-- Main projects
+		if most_productive_day.projects and #most_productive_day.projects > 0 then
+			local projects_result = table.concat(most_productive_day.projects, ", ")
 			table.insert(lines, {
 				{ "    ↳ Projects: ", "commentfg" },
 				{ projects_result, "exyellow" },
@@ -185,7 +187,7 @@ function M.render()
 
 		table.insert(lines, {})
 	elseif max_day_data and max_day_time > 0 then
-		-- Fallback to calculated data if backend records not available
+		-- Fallback to calculated data
 		table.insert(lines, {
 			{ "  • Most Productive: ", "commentfg" },
 			{ max_day_data.day_name, "exgreen" },
@@ -194,32 +196,20 @@ function M.render()
 		table.insert(lines, {})
 	end
 
-	-- Daily Average (calculated from backend data)
-	local daily_avg = s.week_time and math.floor((s.week_time or 0) / 7) or 0
+	-- Daily Average
+	local daily_avg = week_time > 0 and math.floor(week_time / 7) or 0
 	table.insert(lines, {
 		{ "  • Daily Average: ", "commentfg" },
 		{ fmt.fmt_time(daily_avg), "exgreen" },
 		{ " (over 7 days)", "commentfg" },
 	})
 
-	-- Coding Days (from backend streak info)
-	local streak_info = s.streak_info or {}
-	local weekly_pattern = streak_info.weekly_pattern or {}
+	-- ✅ Coding Days (count days with activity)
 	local days_coded = 0
-
-	for i = 1, 7 do
-		if weekly_pattern[i] then
+	for date, stat in pairs(daily_activity) do
+		if M.is_in_current_week(date, week_monday, week_sunday) and stat.time and stat.time > 0 then
 			days_coded = days_coded + 1
 		end
-	end
-
-	if days_coded == 0 then
-		for date, stat in pairs(daily_activity) do
-			if M.is_in_current_week(date, week_monday, week_sunday) and stat.time and stat.time > 0 then
-				days_coded = days_coded + 1
-			end
-		end
-		days_coded = math.min(days_coded, 7) -- Cap at 7 for this week
 	end
 
 	local consistency_pct = math.floor((days_coded / 7) * 100)
@@ -229,9 +219,9 @@ function M.render()
 		{ string.format(" (%d%% consistency)", consistency_pct), "commentfg" },
 	})
 
-	-- vs Last Week (using backend data)
-	if s.last_week_time and s.last_week_time > 0 then
-		local week_diff = (s.week_time or 0) - s.last_week_time
+	-- vs Last Week
+	if last_week_time > 0 then
+		local week_diff = week_time - last_week_time
 		local week_trend_str = week_diff > 0 and "↑" or week_diff < 0 and "↓" or "→"
 		local week_trend_hl = week_diff > 0 and "exgreen" or week_diff < 0 and "exred" or "commentfg"
 
@@ -240,7 +230,7 @@ function M.render()
 			{ week_trend_str, week_trend_hl },
 			{ string.format(" %s", fmt.fmt_time(math.abs(week_diff))), week_trend_hl },
 			{
-				string.format(" (%s → %s)", fmt.fmt_time(s.last_week_time), fmt.fmt_time(s.week_time or 0)),
+				string.format(" (%s → %s)", fmt.fmt_time(last_week_time), fmt.fmt_time(week_time)),
 				"commentfg",
 			},
 		})
@@ -252,12 +242,13 @@ function M.render()
 	table.insert(lines, { { "  📈 Weekly Pattern", "exgreen" } })
 	table.insert(lines, {})
 
-	-- Weekday vs Weekend (from backend weekday_pattern)
+	-- ✅ Weekday vs Weekend (from daily_activity)
 	local weekday_time = 0
 	local weekend_time = 0
+
 	for i = 1, 7 do
-		local weekday_date = M.get_weekday_date(i, week_monday) -- Get exact date this week
-		local day_stat = daily_activity[weekday_date] -- Get data for that specific date
+		local weekday_date = M.get_weekday_date(i, week_monday)
+		local day_stat = daily_activity[weekday_date]
 
 		if day_stat and day_stat.time then
 			if i <= 5 then -- Mon-Fri
@@ -286,7 +277,7 @@ function M.render()
 		})
 	end
 
-	-- Most Active Day (from backend)
+	-- Most Active Day
 	if max_day_data and max_day_time > 0 then
 		table.insert(lines, {
 			{ "  • Best Day: ", "commentfg" },
@@ -295,23 +286,40 @@ function M.render()
 		})
 	end
 
-	-- Productivity Trend (from backend)
+	-- ✅ Productivity Trend (from backend)
 	local productivity_trend = s.productivity_trend or ""
 	if productivity_trend ~= "" then
+		local trend_text
+		local trend_color
+
+		if productivity_trend == "increasing" then
+			trend_text = "📈 Increasing"
+			trend_color = "exgreen"
+		elseif productivity_trend == "decreasing" then
+			trend_text = "📉 Decreasing"
+			trend_color = "exyellow"
+		else
+			trend_text = "➡️  Stable"
+			trend_color = "exblue"
+		end
+
 		table.insert(lines, {
 			{ "  • Trend: ", "commentfg" },
-			{ productivity_trend, "exgreen" },
+			{ trend_text, trend_color },
 		})
 	end
 
 	table.insert(lines, {})
 
-	-- Heatmap (using backend weekly_heatmap)
+	-- ✅ Heatmap (from backend weekly_heatmap)
 	local hm = s.weekly_heatmap
 	if hm and #hm > 0 then
+		table.insert(lines, { { "  📅 Activity Heatmap", "exgreen" } })
+		table.insert(lines, {})
 		for _, l in ipairs(ui.heatmap(hm)) do
 			table.insert(lines, l)
 		end
+		table.insert(lines, {})
 	end
 
 	return lines

@@ -8,10 +8,15 @@ function M.render()
 	local s = state.stats
 	local lines = {}
 
+	local today = s.today or {}
+
+	local today_time = today.total_time or 0
+	local today_lines = today.total_lines or 0
+
+	local focus_score = today.focus_score or 0
+
 	-- DYNAMIC HERO SECTION
 	local hour = tonumber(os.date("%H"))
-	local today_time = s.today_time or 0
-	local current_streak = s.streak_info and s.streak_info.current or s.streak or 0
 
 	-- Get daily goals
 	local daily_goals = s.daily_goals or {}
@@ -50,10 +55,6 @@ function M.render()
 	table.insert(lines, {})
 
 	-- TODAY AT A GLANCE
-	local today_lines = s.today_lines or 0
-	-- local today_files = s.today_files or 0
-	local focus_score = s.focus_score or 0
-
 	local focus_str = focus_score > 0 and tostring(focus_score) .. "/100" or "N/A"
 
 	-- Create metrics table
@@ -68,12 +69,11 @@ function M.render()
 	table.insert(lines, {})
 
 	-- GOAL PROGRESS
-	local today_lines = s.today_lines or 0
-
 	if daily_goal_time > 0 or daily_goal_lines > 0 then
 		table.insert(lines, { { "  🎯 Today's Goals", "exgreen" } })
 		table.insert(lines, {})
 
+		-- TIME GOAL
 		if daily_goal_time > 0 then
 			local time_pct = 0
 			if today_time > 0 then
@@ -116,7 +116,7 @@ function M.render()
 			table.insert(lines, lines_goal_line)
 		end
 
-		-- Goal status message (based on time goal)
+		-- Goal status message
 		local time_pct = today_time > 0 and math.floor((today_time / daily_goal_time) * 100) or 0
 		local goal_pct = math.min(100, time_pct)
 		local goal_hl = goal_pct >= 100 and "exgreen" or goal_pct >= 75 and "exyellow" or "exblue"
@@ -146,11 +146,11 @@ function M.render()
 	table.insert(lines, { { "  🔥 Streak Power", "exgreen" } })
 	table.insert(lines, {})
 
-	local longest_streak = s.streak_info and s.streak_info.longest or s.longest_streak or 0
-
 	-- Visual flame meter based on streak
-	local flame_display = ""
-	local streak_hl = "commentfg"
+	local current_streak = s.streak_info.current or 0
+	local longest_streak = s.streak_info.longest or 0
+	local flame_display
+	local streak_hl
 
 	if current_streak >= 30 then
 		flame_display = "🔥🔥🔥🔥🔥"
@@ -174,76 +174,145 @@ function M.render()
 
 	table.insert(lines, {
 		{ "  " .. flame_display .. "  ", "normal" },
-		{ string.format("%d DAY%s", current_streak, current_streak == 1 and "" or "S"), streak_hl },
+		{
+			string.format("%d DAY%s", current_streak, current_streak == 1 and "" or "S"),
+			streak_hl,
+		},
 		{
 			longest_streak > current_streak and string.format("  •  Record: %d days", longest_streak)
-				or "  •  NEW RECORD!",
+				or (current_streak > 0 and "  •  NEW RECORD!" or ""),
 			"commentfg",
 		},
 	})
 
-	-- Weekly pattern with visual dots
-	local weekly_pattern = s.streak_info and s.streak_info.weekly_pattern or {}
-	if #weekly_pattern >= 7 then
-		table.insert(lines, {})
+	-- FLAG WEEKDAY
+	local daily_activity = s.daily_activity or {}
+	local days_with_activity = {}
 
-		local pattern_line = { { "  This week:  ", "commentfg" } }
-		for i = 1, 7 do
-			local day_char = weekly_pattern[i] and "●" or "○"
-			local day_hl = weekly_pattern[i] and "exgreen" or "commentfg"
-			table.insert(pattern_line, { day_char .. " ", day_hl })
-		end
-		table.insert(lines, pattern_line)
+	-- Get today's date parts
+	local now = os.date("*t")
 
-		local label_line = { { "              ", "commentfg" } }
-		for _, label in ipairs({ "M", "T", "W", "T", "F", "S", "S" }) do
-			table.insert(label_line, { label .. " ", "commentfg" })
+	-- Lua: Sunday = 1, Monday = 2, ..., Saturday = 7
+	-- Convert to ISO: Monday = 1, Sunday = 7
+	local iso_wday = now.wday == 1 and 7 or now.wday - 1
+
+	-- Timestamp for Monday of the current week
+	local monday_time = os.time({
+		year = now.year,
+		month = now.month,
+		day = now.day - (iso_wday - 1),
+		hour = 0,
+		min = 0,
+		sec = 0,
+	})
+
+	-- Build week: Monday → Sunday
+	for i = 0, 6 do
+		local day_time = monday_time + i * 86400
+		local day_date = os.date("%Y-%m-%d", day_time)
+
+		local entry = daily_activity[day_date]
+		local has_activity = entry ~= nil and entry.time > 0
+
+		-- Future days (after today) → inactive
+		if day_time > os.time() then
+			has_activity = false
 		end
-		table.insert(lines, label_line)
+
+		days_with_activity[#days_with_activity + 1] = has_activity
 	end
 
+	-- Render
 	table.insert(lines, {})
 
-	-- PERFORMANCE COMPARISON (Visual vs yesterday/week)
+	-- Dots line
+	local pattern_line = {
+		{ "  This week:  ", "commentfg" },
+	}
+
+	for i = 1, 7 do
+		local active = days_with_activity[i]
+		local char = active and "●" or "○"
+		local hl = active and "exgreen" or "commentfg"
+		table.insert(pattern_line, { char .. " ", hl })
+	end
+
+	table.insert(lines, pattern_line)
+
+	-- Labels line (ISO week)
+	local label_line = {
+		{ "              ", "commentfg" },
+	}
+
+	for _, label in ipairs({ "M", "T", "W", "T", "F", "S", "S" }) do
+		table.insert(label_line, { label .. " ", "commentfg" })
+	end
+
+	table.insert(lines, label_line)
+	table.insert(lines, {})
+
+	-- PERFORMANCE COMPARISON
 	table.insert(lines, { { "  📊 Performance", "exgreen" } })
 	table.insert(lines, {})
 
-	local yesterday_time = s.yesterday_time or 0
-	local week_time = s.week_time or 0
-	local last_week_time = s.last_week_time or 0
-
 	local comparison_data = {}
+	local yesterday = s.yesterday or {}
+	local this_week = s.this_week or {}
+	local last_week = s.last_week or {}
+	local yesterday_time = yesterday.total_time or 0
+	local week_time = this_week.total_time or 0
+	local last_week_time = last_week.total_time or 0
 
 	-- Today vs Yesterday
-	if yesterday_time > 0 then
-		local diff = today_time - yesterday_time
-		local diff_pct = math.floor((diff / yesterday_time) * 100)
-		local status = diff >= 0 and "↑" or "↓"
-		local status_hl = diff >= 0 and "exgreen" or "exred"
+	if today_time > 0 or yesterday_time > 0 then
+		if yesterday_time == 0 then
+			table.insert(comparison_data, {
+				label = "vs Yesterday",
+				current = fmt.fmt_time(today_time),
+				previous = fmt.fmt_time(0),
+				trend = "↑ New",
+				trend_hl = "exgreen",
+			})
+		else
+			local diff = today_time - yesterday_time
+			local diff_pct = math.floor((diff / yesterday_time) * 100)
+			local status = diff >= 0 and "↑" or "↓"
+			local status_hl = diff >= 0 and "exgreen" or "exred"
 
-		table.insert(comparison_data, {
-			label = "vs Yesterday",
-			current = fmt.fmt_time(today_time),
-			previous = fmt.fmt_time(yesterday_time),
-			trend = string.format("%s %d%%", status, math.abs(diff_pct)),
-			trend_hl = status_hl,
-		})
+			table.insert(comparison_data, {
+				label = "vs Yesterday",
+				current = fmt.fmt_time(today_time),
+				previous = fmt.fmt_time(yesterday_time),
+				trend = string.format("%s %d%%", status, math.abs(diff_pct)),
+				trend_hl = status_hl,
+			})
+		end
 	end
 
 	-- This Week vs Last Week
-	if last_week_time > 0 then
-		local week_diff = week_time - last_week_time
-		local week_diff_pct = math.floor((week_diff / last_week_time) * 100)
-		local week_status = week_diff >= 0 and "↑" or "↓"
-		local week_status_hl = week_diff >= 0 and "exgreen" or "exred"
+	if week_time > 0 or last_week_time > 0 then
+		if last_week_time == 0 then
+			table.insert(comparison_data, {
+				label = "vs Last Week",
+				current = fmt.fmt_time(week_time),
+				previous = fmt.fmt_time(0),
+				trend = "↑ New",
+				trend_hl = "exgreen",
+			})
+		else
+			local diff = week_time - last_week_time
+			local diff_pct = math.floor((diff / last_week_time) * 100)
+			local status = diff >= 0 and "↑" or "↓"
+			local status_hl = diff >= 0 and "exgreen" or "exred"
 
-		table.insert(comparison_data, {
-			label = "vs Last Week",
-			current = fmt.fmt_time(week_time),
-			previous = fmt.fmt_time(last_week_time),
-			trend = string.format("%s %d%%", week_status, math.abs(week_diff_pct)),
-			trend_hl = week_status_hl,
-		})
+			table.insert(comparison_data, {
+				label = "vs Last Week",
+				current = fmt.fmt_time(week_time),
+				previous = fmt.fmt_time(last_week_time),
+				trend = string.format("%s %d%%", status, math.abs(diff_pct)),
+				trend_hl = status_hl,
+			})
+		end
 	end
 
 	-- Display comparisons
@@ -268,40 +337,30 @@ function M.render()
 	table.insert(lines, { { "  🌟 Live Highlights", "exgreen" } })
 	table.insert(lines, {})
 
-	local programming_languages = s.programming_languages or {}
+	local languages = today.languages or {}
 	local top_lang = nil
 	local top_lang_time = 0
 
-	for lang, stat in pairs(programming_languages) do
-		local lang_time = stat.time or 0
-		if lang_time > top_lang_time then
-			top_lang = lang
-			top_lang_time = lang_time
+	for _, lang in ipairs(languages) do
+		if lang.time > top_lang_time then
+			top_lang = lang.name
+			top_lang_time = lang.time
 		end
 	end
 
-	-- Top language with badge
+	-- Top language
 	if top_lang then
-		local lang_stat = programming_languages[top_lang]
-		local badge = ""
-		if lang_stat.trending then
-			badge = " 🔥 TRENDING"
-		elseif lang_stat.proficiency == "Expert" or lang_stat.proficiency == "Master" then
-			badge = " 🏆 EXPERT"
-		end
-
 		table.insert(lines, {
 			{ "  💎 ", "normal" },
 			{ top_lang, "exgreen" },
-			{ badge, "exyellow" },
+			{ string.format(" (%s)", fmt.fmt_time(top_lang_time)), "commentfg" },
 		})
 	end
 
-	-- Peak productivity time
-	local peak_hours = s.peak_hours or {}
-	if #peak_hours > 0 then
-		local peak_time = string.format("%02d:00-%02d:00", peak_hours[1], peak_hours[1] + 1)
-		local is_peak_now = hour >= peak_hours[1] and hour < peak_hours[1] + 1
+	local peak_hour = today.peak_hour or -1
+	if peak_hour >= 0 then
+		local peak_time = string.format("%02d:00-%02d:00", peak_hour, peak_hour + 1)
+		local is_peak_now = hour >= peak_hour and hour < peak_hour + 1
 
 		table.insert(lines, {
 			{ "  ⚡ Peak: ", "commentfg" },
@@ -311,11 +370,20 @@ function M.render()
 	end
 
 	-- Productivity status
-	local productivity_trend = s.productivity_trend or ""
+	local productivity_trend = s.day_over_day and s.day_over_day.trend or ""
 	if productivity_trend ~= "" then
+		local trend_text
+		if productivity_trend == "increasing" then
+			trend_text = "📈 Productivity increasing"
+		elseif productivity_trend == "decreasing" then
+			trend_text = "📉 Slowing down"
+		else
+			trend_text = "➡️  Stable pace"
+		end
+
 		table.insert(lines, {
-			{ "  📈 ", "normal" },
-			{ productivity_trend, "exgreen" },
+			{ "  ", "normal" },
+			{ trend_text, "exgreen" },
 		})
 	end
 
@@ -366,15 +434,35 @@ function M.render()
 
 	-- Record chasing
 	local records = s.records or {}
-	local most_productive_day = records.most_productive_day or {}
-	if most_productive_day.time and most_productive_day.time > today_time and today_time > 0 then
-		local gap = most_productive_day.time - today_time
-		if gap < 3600 then -- Within 1 hour of record
+	local mpd = records.most_productive_day or {}
+
+	if today_time > 0 and mpd.time then
+		-- New record
+		if today_time > mpd.time then
 			table.insert(motivations, {
 				icon = "🏆",
-				text = fmt.fmt_time(gap) .. " from your record - GO FOR IT!",
-				color = "exyellow",
+				text = "NEW MOST PRODUCTIVE DAY! 🎉",
+				color = "exgreen",
 			})
+
+		-- Tied record
+		elseif today_time == mpd.time then
+			table.insert(motivations, {
+				icon = "🏆",
+				text = "You tied your most productive day!",
+				color = "exgreen",
+			})
+
+		-- Chasing record
+		else
+			local gap = mpd.time - today_time
+			if gap <= 3600 then
+				table.insert(motivations, {
+					icon = "🏆",
+					text = fmt.fmt_time(gap) .. " from your record — GO FOR IT!",
+					color = "exyellow",
+				})
+			end
 		end
 	end
 

@@ -91,28 +91,47 @@ function M.track(is_save)
 	})
 end
 
---- Get stats from backend
-function M.get_stats(callback, today_only)
-	local cmd = M.config.codeme_bin .. " stats --json"
-	if today_only then
-		cmd = cmd .. " --today"
-	end
+function M.get_stats(callback)
+	local cmd = M.config.codeme_bin .. " api --compact"
+	local output = {}
 
 	vim.fn.jobstart(cmd, {
-		stdout_buffered = true,
+		stdout_buffered = true, -- still fine
 		on_stdout = function(_, data)
+			if data then
+				vim.list_extend(output, data)
+			end
+		end,
+		on_stderr = function(_, data)
 			if data and #data > 0 then
-				local filtered = vim.tbl_filter(function(line)
-					return line ~= "" and (line:match("^%s*{") or line:match("[,}%]]%s*$"))
-				end, data)
-
-				if #filtered > 0 then
-					local json_str = table.concat(filtered, "")
-					local ok, stats = pcall(vim.json.decode, json_str)
-					if ok and stats then
-						callback(stats)
-					end
+				local msg = table.concat(data, "\n"):gsub("^%s+", ""):gsub("%s+$", "")
+				if msg ~= "" then
+					vim.notify("CodeMe API error: " .. msg, vim.log.levels.WARN)
 				end
+			end
+		end,
+		on_exit = function(_, exit_code)
+			if exit_code ~= 0 then
+				vim.notify(string.format("CodeMe API exited with code %d", exit_code), vim.log.levels.ERROR)
+				return
+			end
+
+			local json_str = table.concat(output, "\n")
+			-- Strip anything before first `{`
+			json_str = json_str:match("({.*})")
+			if not json_str then
+				vim.notify("CodeMe: No JSON found in output", vim.log.levels.ERROR)
+				return
+			end
+
+			local ok, stats = pcall(vim.json.decode, json_str)
+			if ok then
+				callback(stats)
+			else
+				vim.notify(
+					string.format("CodeMe: Failed to parse stats JSON\nFirst 200 chars: %s", json_str:sub(1, 200)),
+					vim.log.levels.ERROR
+				)
 			end
 		end,
 	})

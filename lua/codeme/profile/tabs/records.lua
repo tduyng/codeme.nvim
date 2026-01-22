@@ -6,7 +6,7 @@ local ui = require("codeme.ui")
 local M = {}
 
 function M.render()
-	local s = state.stats
+	local globalStats = state.stats or {}
 	local lines = {}
 
 	table.insert(lines, {})
@@ -21,21 +21,21 @@ function M.render()
 		{ "Period", "Time", "Lines", "Files" },
 		{
 			"Today",
-			fmt.fmt_time(s.today_time or 0),
-			fmt.fmt_num(s.today_lines or 0),
-			tostring(s.today_files or 0),
+			fmt.fmt_time(globalStats.today.total_time or 0),
+			fmt.fmt_num(globalStats.today.total_lines or 0),
+			tostring(globalStats.today.total_files or 0),
 		},
 		{
 			"This Week",
-			fmt.fmt_time(s.week_time or 0),
-			fmt.fmt_num(s.week_lines or 0),
-			tostring(s.week_files or 0),
+			fmt.fmt_time(globalStats.this_week.total_time or 0),
+			fmt.fmt_num(globalStats.this_week.total_lines or 0),
+			tostring(globalStats.this_week.total_files or 0),
 		},
 		{
 			"All Time",
-			fmt.fmt_time(s.total_time or 0),
-			fmt.fmt_num(s.total_lines or 0),
-			tostring(s.total_files or 0),
+			fmt.fmt_time(globalStats.all_time.total_time or 0),
+			fmt.fmt_num(globalStats.all_time.total_lines or 0),
+			tostring(globalStats.all_time.total_files or 0),
 		},
 	}
 
@@ -48,7 +48,7 @@ function M.render()
 	table.insert(lines, { { "  🎯 Career Level", "exgreen" } })
 	table.insert(lines, {})
 
-	local total_hours = math.floor((s.total_time or 0) / 3600)
+	local total_hours = math.floor((globalStats.all_time.total_time or 0) / 3600)
 	local milestones = {
 		{ threshold = 100000, name = "Legendary", icon = "👑", color = "exgreen" },
 		{ threshold = 50000, name = "Master", icon = "🏅", color = "exgreen" },
@@ -57,7 +57,7 @@ function M.render()
 		{ threshold = 5000, name = "Professional", icon = "🔥", color = "exyellow" },
 		{ threshold = 2500, name = "Committed", icon = "⭐", color = "exyellow" },
 		{ threshold = 1000, name = "Century", icon = "💯", color = "exblue" },
-		{ threshold = 500, name = "Rising", icon = "🌱", color = "exblue" },
+		{ threshold = 100, name = "Rising", icon = "🌱", color = "exblue" },
 	}
 
 	local current_level = nil
@@ -116,7 +116,7 @@ function M.render()
 	table.insert(lines, { { "  🏆 Your Records", "exgreen" } })
 	table.insert(lines, {})
 
-	local records = s.records or {}
+	local records = globalStats.records or {}
 	local record_list = {}
 
 	-- Most Productive Day
@@ -156,7 +156,7 @@ function M.render()
 			title = "Most Lines",
 			value = fmt.fmt_num(highest_daily_output.lines) .. " lines",
 			detail = highest_daily_output.date and fmt.fmt_date_full(highest_daily_output.date) or "",
-			extra = highest_daily_output.sessions and highest_daily_output.sessions .. " sessions" or "",
+			extra = highest_daily_output.session_count and highest_daily_output.session_count .. " sessions" or "",
 		})
 	end
 
@@ -242,7 +242,7 @@ function M.render()
 	end
 
 	-- ACHIEVEMENTS
-	local achievements = s.achievements or {}
+	local achievements = globalStats.achievements or {}
 	if #achievements > 0 then
 		table.insert(lines, { { "  🎖️ Achievements", "exgreen" } })
 		table.insert(lines, {})
@@ -297,11 +297,11 @@ function M.render()
 	table.insert(lines, { { "  💪 Can You Beat These?", "exgreen" } })
 	table.insert(lines, {})
 
-	local current_streak = s.streak or 0
+	local current_streak = globalStats.streak or 0
 	local challenges = {}
 
 	if most_productive_day.time then
-		local today_time = s.today_time or 0
+		local today_time = globalStats.today_time or 0
 		local gap = most_productive_day.time - today_time
 		if gap > 0 and today_time > 0 then
 			table.insert(challenges, {
