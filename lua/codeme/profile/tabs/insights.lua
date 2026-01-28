@@ -152,8 +152,8 @@ function M.render()
 	end
 
 	-- STREAK & CONSISTENCY
-	local current_streak = globalStats.streak or 0
-	local longest_streak = globalStats.longest_streak or 0
+	local current_streak = (globalStats.streak_info.current or 0) + 1
+	local longest_streak = globalStats.streak_info.longest or 0
 
 	table.insert(lines, { { "  🔥 Streak & Consistency", "exgreen" } })
 	table.insert(lines, {})

@@ -61,13 +61,12 @@ end
 
 local function send_to_backend(filepath, lines_changed, opts)
 	opts = opts or {}
-
 	local bufnr = vim.fn.bufnr(filepath)
 	if bufnr == -1 or not vim.api.nvim_buf_is_valid(bufnr) then
 		return
 	end
 
-	local language = vim.bo[bufnr].filetype ~= "" and vim.bo[bufnr].filetype or "n/a"
+	local language = vim.bo[bufnr].filetype ~= "" and vim.bo[bufnr].filetype or ""
 
 	local cmd = {
 		opts.codeme_bin or "codeme",
@@ -86,7 +85,7 @@ local function send_to_backend(filepath, lines_changed, opts)
 		detach = true,
 		on_exit = function(_, code)
 			if opts.verbose then
-				local heartbeat_type = opts.heartbeat_type or "n/a"
+				local heartbeat_type = opts.heartbeat_type or ""
 				if code == 0 then
 					vim.notify(
 						string.format(
@@ -114,41 +113,38 @@ local function calculate_lines_changed(filepath)
 	if current_diff ~= nil then
 		-- GIT-TRACKED FILE
 		local last_diff = last_git_diff_lines[filepath] or 0
-		local delta = current_diff - last_diff
 
-		-- Update baseline
+		if current_diff == 0 and last_diff > 0 then
+			last_git_diff_lines[filepath] = 0
+			return 0, "reset"
+		end
+
+		local delta = current_diff - last_diff
 		last_git_diff_lines[filepath] = current_diff
 
-		if delta > 0 then
-			return delta, "save" -- productivity signal
+		if delta ~= 0 then
+			-- Lines changed in git diff
+			-- Count both additions and deletions as work
+			return math.abs(delta), delta > 0 and "add" or "delete"
 		end
 
-		-- File was reset (commit, checkout, stash, etc.)
-		-- Still send heartbeat with 0 lines to preserve time tracking
-		if current_diff == 0 and last_diff > 0 then
-			return 0, "save_reset" -- still counts as time spent
-		end
-
-		-- No new changes since last save (delta <= 0)
-		-- Don't send redundant heartbeat
-		return nil, nil
+		-- Git diff unchanged, but still editing/refactoring
+		-- This catches: refactors, formatting, renames, navigation
+		-- Send minimal signal to prevent "always 0" problem
+		return 1, "edit_idle"
 	else
 		-- NON-GIT-TRACKED FILE (with NON_GIT_COOLDOWN throttling)
 		local now = os.time()
 		local last_save = last_non_git_save_time[filepath]
 
 		if not last_save then
-			-- First save of this non-git file
 			last_non_git_save_time[filepath] = now
-			return 0, "save_new" -- new file, track time only
+			return 0, "new_file"
 		elseif (now - last_save) < NON_GIT_COOLDOWN then
-			-- Too soon since last save, skip to prevent spam
-			-- This implements the NON_GIT_COOLDOWN throttling
 			return nil, nil
 		else
-			-- Enough time passed, send heartbeat and reset timer
 			last_non_git_save_time[filepath] = now
-			return 0, "save_untracked" -- untracked file, time only
+			return 0, "untracked"
 		end
 	end
 end
@@ -237,7 +233,6 @@ vim.api.nvim_create_autocmd("BufEnter", {
 	end,
 })
 
---- Wire into BufWritePost: file saved
 vim.api.nvim_create_autocmd("BufWritePost", {
 	group = augroup,
 	callback = function()

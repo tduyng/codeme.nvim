@@ -273,7 +273,7 @@ function M.format_items_list(items, key, max_items)
 	return M.format_list(extracted, max_items)
 end
 
-function M.get_top_from_session_list(list, max)
+function M.top_items(list, max)
 	if not list or #list == 0 then
 		return ""
 	end
@@ -285,19 +285,13 @@ function M.get_top_from_session_list(list, max)
 		result[#result + 1] = list[i]
 	end
 
+	-- If there are more items, show "• x more" in subtle gray
 	if #list > max then
-		result[#result + 1] = "..."
+		local remaining = #list - max
+		result[#result + 1] = string.format(" +%d more", remaining)
 	end
 
 	return table.concat(result, ", ")
-end
-
-function M.get_top_projects(session, max)
-	return M.get_top_from_session_list(session.projects, max or 3)
-end
-
-function M.get_top_languages(session, max)
-	return M.get_top_from_session_list(session.languages, max or 5)
 end
 
 return M

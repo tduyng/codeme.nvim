@@ -136,8 +136,8 @@ function M.render()
 				duration_str = duration_str .. " ⭐"
 			end
 
-			local projects = helpers.get_top_projects(session, 2)
-			local languages = helpers.get_top_languages(session, 5)
+			local projects = helpers.top_items(session.projects, 2)
+			local languages = helpers.top_items(session.languages, 5)
 
 			tbl[#tbl + 1] = {
 				time_str,

@@ -1,109 +1,172 @@
 local M = {}
 
--- Helper to extract color from a highlight group
-local function get_hl_color(hl_name, attr)
-	local hl = vim.api.nvim_get_hl(0, { name = hl_name, link = false })
-	if hl and hl[attr] then
+local function get_hl(name, attr)
+	local ok, hl = pcall(vim.api.nvim_get_hl, 0, { name = name, link = false })
+	if ok and hl[attr] then
 		return string.format("#%06x", hl[attr])
 	end
-	return nil
 end
 
--- Helper to get foreground color with fallbacks
-local function get_fg(primary, fallbacks)
-	local color = get_hl_color(primary, "fg")
-	if color then
-		return color
-	end
-
-	-- Try fallbacks
-	for _, fb in ipairs(fallbacks or {}) do
-		color = get_hl_color(fb, "fg")
-		if color then
-			return color
+local function first_valid(...)
+	for _, val in ipairs({ ... }) do
+		if val then
+			return val
 		end
 	end
-
-	-- Ultimate fallback based on background
-	return vim.o.background == "dark" and "#ffffff" or "#000000"
 end
 
--- Helper to get background color with fallbacks
-local function get_bg(primary, fallbacks)
-	local color = get_hl_color(primary, "bg")
-	if color then
-		return color
-	end
-
-	-- Try fallbacks
-	for _, fb in ipairs(fallbacks or {}) do
-		color = get_hl_color(fb, "bg")
-		if color then
-			return color
-		end
-	end
-
-	return "NONE"
-end
-
--- Extract colors from current colorscheme
 function M.get_colors()
-	-- Try to intelligently extract colors from existing highlight groups
-	-- This works with ANY colorscheme (Catppuccin, Gruvbox, Tokyo Night, Nord, etc.)
+	local is_dark = vim.o.background == "dark"
 
 	return {
-		-- Semantic colors from common highlight groups
-		green = get_fg("String", { "Function", "Keyword", "Type" }),
-		red = get_fg("Error", { "ErrorMsg", "DiagnosticError", "DiffDelete" }),
-		yellow = get_fg("Warning", { "WarningMsg", "DiagnosticWarn", "Number" }),
-		blue = get_fg("Function", { "Identifier", "Statement", "Type" }),
-		cyan = get_fg("Special", { "Constant", "Type", "Identifier" }),
-		magenta = get_fg("Keyword", { "Statement", "Constant", "PreProc" }),
+		green = first_valid(
+			get_hl("@string", "fg"),
+			get_hl("String", "fg"),
+			get_hl("@function", "fg"),
+			get_hl("Function", "fg"),
+			is_dark and "#a6e3a1" or "#40a02b"
+		),
 
-		-- UI colors
-		comment = get_fg("Comment", { "NonText", "LineNr" }),
-		linenr = get_fg("LineNr", { "Comment", "NonText" }),
-		normal = get_fg("Normal", {}),
+		red = first_valid(
+			get_hl("Error", "fg"),
+			get_hl("ErrorMsg", "fg"),
+			get_hl("@keyword", "fg"),
+			get_hl("DiagnosticError", "fg"),
+			is_dark and "#f38ba8" or "#d20f39"
+		),
 
-		-- Tab colors
-		active_fg = get_fg("TabLineSel", { "Title", "Function", "Identifier" }),
-		active_bg = get_bg("TabLineSel", { "Normal" }),
-		inactive_fg = get_fg("TabLine", { "Comment", "LineNr" }),
-		inactive_bg = get_bg("TabLine", { "Normal" }),
+		yellow = first_valid(
+			get_hl("@number", "fg"),
+			get_hl("Number", "fg"),
+			get_hl("WarningMsg", "fg"),
+			get_hl("@constant", "fg"),
+			is_dark and "#f9e2af" or "#df8e1d"
+		),
 
-		-- Progress bar colors
-		progress_filled = get_fg("Function", { "Identifier", "Type" }),
-		progress_empty = get_fg("LineNr", { "Comment", "NonText" }),
+		blue = first_valid(
+			get_hl("@function", "fg"),
+			get_hl("Function", "fg"),
+			get_hl("Identifier", "fg"),
+			get_hl("@type", "fg"),
+			is_dark and "#89b4fa" or "#1e66f5"
+		),
 
-		-- Language bar color
-		lang_bar = get_fg("String", { "Function", "Type" }),
+		cyan = first_valid(
+			get_hl("@property", "fg"),
+			get_hl("Special", "fg"),
+			get_hl("@constant", "fg"),
+			get_hl("Constant", "fg"),
+			is_dark and "#94e2d5" or "#179299"
+		),
 
-		-- Footer color
-		footer = get_fg("Comment", { "LineNr", "NonText" }),
+		magenta = first_valid(
+			get_hl("@keyword", "fg"),
+			get_hl("Keyword", "fg"),
+			get_hl("Statement", "fg"),
+			get_hl("@variable", "fg"),
+			is_dark and "#cba6f7" or "#8839ef"
+		),
 
-		-- Activity heatmap (GitHub-style intensity levels)
-		-- Use green shades with increasing intensity
-		activity_none = get_fg("LineNr", { "Comment" }), -- Very dim
-		activity_low = get_fg("Comment", { "LineNr" }), -- Dim
-		activity_med = get_fg("String", { "Function" }), -- Medium
-		activity_high = get_fg("Function", { "String", "Type" }), -- Bright
+		comment = first_valid(
+			get_hl("@comment", "fg"),
+			get_hl("Comment", "fg"),
+			get_hl("NonText", "fg"),
+			is_dark and "#6c7086" or "#9ca0b0"
+		),
+
+		linenr = first_valid(
+			get_hl("LineNr", "fg"),
+			get_hl("@comment", "fg"),
+			get_hl("Comment", "fg"),
+			is_dark and "#585b70" or "#acb0be"
+		),
+
+		normal = first_valid(get_hl("Normal", "fg"), is_dark and "#cdd6f4" or "#4c4f69"),
+
+		active_fg = first_valid(
+			get_hl("TabLineSel", "fg"),
+			get_hl("@function", "fg"),
+			get_hl("Function", "fg"),
+			get_hl("Title", "fg"),
+			is_dark and "#89b4fa" or "#1e66f5"
+		),
+
+		active_bg = first_valid(get_hl("TabLineSel", "bg"), get_hl("CursorLine", "bg"), get_hl("Visual", "bg")),
+
+		inactive_fg = first_valid(
+			get_hl("TabLine", "fg"),
+			get_hl("@comment", "fg"),
+			get_hl("Comment", "fg"),
+			is_dark and "#6c7086" or "#9ca0b0"
+		),
+
+		inactive_bg = first_valid(get_hl("TabLine", "bg"), get_hl("Normal", "bg")),
+
+		progress_filled = first_valid(
+			get_hl("@function", "fg"),
+			get_hl("Function", "fg"),
+			get_hl("Identifier", "fg"),
+			is_dark and "#89b4fa" or "#1e66f5"
+		),
+
+		progress_empty = first_valid(
+			get_hl("LineNr", "fg"),
+			get_hl("@comment", "fg"),
+			get_hl("Comment", "fg"),
+			is_dark and "#585b70" or "#acb0be"
+		),
+
+		lang_bar = first_valid(
+			get_hl("@string", "fg"),
+			get_hl("String", "fg"),
+			get_hl("Function", "fg"),
+			is_dark and "#a6e3a1" or "#40a02b"
+		),
+
+		footer = first_valid(
+			get_hl("@comment", "fg"),
+			get_hl("Comment", "fg"),
+			get_hl("LineNr", "fg"),
+			is_dark and "#6c7086" or "#9ca0b0"
+		),
+
+		activity_none = first_valid(get_hl("LineNr", "fg"), is_dark and "#45475a" or "#ccd0da"),
+
+		activity_low = first_valid(get_hl("@comment", "fg"), get_hl("Comment", "fg"), is_dark and "#6c7086" or "#9ca0b0"),
+
+		activity_med = first_valid(get_hl("@string", "fg"), get_hl("String", "fg"), is_dark and "#a6e3a1" or "#40a02b"),
+
+		activity_high = first_valid(
+			get_hl("@function", "fg"),
+			get_hl("Function", "fg"),
+			is_dark and "#89b4fa" or "#1e66f5"
+		),
 	}
 end
 
 function M.setup()
-	local colors = M.get_colors()
+	local c = M.get_colors()
 
-	-- Main semantic highlights
-	vim.api.nvim_set_hl(0, "CodeMeGreen", { fg = colors.green, bold = true })
-	vim.api.nvim_set_hl(0, "CodeMeRed", { fg = colors.red, bold = true })
-	vim.api.nvim_set_hl(0, "CodeMeYellow", { fg = colors.yellow, bold = true })
-	vim.api.nvim_set_hl(0, "CodeMeBlue", { fg = colors.blue, bold = true })
-	vim.api.nvim_set_hl(0, "CodeMeCyan", { fg = colors.cyan, bold = true })
-	vim.api.nvim_set_hl(0, "CodeMeMagenta", { fg = colors.magenta, bold = true })
-	vim.api.nvim_set_hl(0, "CodeMeComment", { fg = colors.comment })
-	vim.api.nvim_set_hl(0, "CodeMeLineNr", { fg = colors.linenr })
+	vim.api.nvim_set_hl(0, "CodeMeGreen", { fg = c.green, bold = true })
+	vim.api.nvim_set_hl(0, "CodeMeRed", { fg = c.red, bold = true })
+	vim.api.nvim_set_hl(0, "CodeMeYellow", { fg = c.yellow, bold = true })
+	vim.api.nvim_set_hl(0, "CodeMeBlue", { fg = c.blue, bold = true })
+	vim.api.nvim_set_hl(0, "CodeMeCyan", { fg = c.cyan, bold = true })
+	vim.api.nvim_set_hl(0, "CodeMeMagenta", { fg = c.magenta, bold = true })
+	vim.api.nvim_set_hl(0, "CodeMeComment", { fg = c.comment })
+	vim.api.nvim_set_hl(0, "CodeMeLineNr", { fg = c.linenr })
+	vim.api.nvim_set_hl(0, "CodeMeTabActive", { fg = c.active_fg, bg = c.active_bg, bold = true })
+	vim.api.nvim_set_hl(0, "CodeMeTabInactive", { fg = c.inactive_fg, bg = c.inactive_bg })
+	vim.api.nvim_set_hl(0, "CodeMeProgressFilled", { fg = c.progress_filled, bold = true })
+	vim.api.nvim_set_hl(0, "CodeMeProgressEmpty", { fg = c.progress_empty })
+	vim.api.nvim_set_hl(0, "CodeMeLangBar", { fg = c.lang_bar, bold = true })
+	vim.api.nvim_set_hl(0, "CodeMeFooter", { fg = c.footer, italic = true })
+	vim.api.nvim_set_hl(0, "CodeMeActivityNone", { fg = c.activity_none })
+	vim.api.nvim_set_hl(0, "CodeMeActivityLow", { fg = c.activity_low })
+	vim.api.nvim_set_hl(0, "CodeMeActivityMed", { fg = c.activity_med })
+	vim.api.nvim_set_hl(0, "CodeMeActivityHigh", { fg = c.activity_high })
 
-	-- Backwards compatibility aliases (old names)
+	-- Backwards compatibility
 	vim.api.nvim_set_hl(0, "exgreen", { link = "CodeMeGreen" })
 	vim.api.nvim_set_hl(0, "exred", { link = "CodeMeRed" })
 	vim.api.nvim_set_hl(0, "exyellow", { link = "CodeMeYellow" })
@@ -112,57 +175,13 @@ function M.setup()
 	vim.api.nvim_set_hl(0, "exmagenta", { link = "CodeMeMagenta" })
 	vim.api.nvim_set_hl(0, "commentfg", { link = "CodeMeComment" })
 	vim.api.nvim_set_hl(0, "linenr", { link = "CodeMeLineNr" })
-
-	-- Tab highlights
-	vim.api.nvim_set_hl(0, "CodeMeTabActive", {
-		fg = colors.active_fg,
-		bg = colors.active_bg,
-		bold = true,
-	})
-
-	vim.api.nvim_set_hl(0, "CodeMeTabInactive", {
-		fg = colors.inactive_fg,
-		bg = colors.inactive_bg,
-	})
-
-	-- Progress bar highlights
-	vim.api.nvim_set_hl(0, "CodeMeProgressFilled", {
-		fg = colors.progress_filled,
-		bold = true,
-	})
-
-	vim.api.nvim_set_hl(0, "CodeMeProgressEmpty", {
-		fg = colors.progress_empty,
-	})
-
-	-- Language bar highlights
-	vim.api.nvim_set_hl(0, "CodeMeLangBar", {
-		fg = colors.lang_bar,
-		bold = true,
-	})
-
-	-- Footer highlights
-	vim.api.nvim_set_hl(0, "CodeMeFooter", {
-		fg = colors.footer,
-		italic = true,
-	})
-
-	-- Activity heatmap colors (4 levels)
-	vim.api.nvim_set_hl(0, "CodeMeActivityNone", { fg = colors.activity_none })
-	vim.api.nvim_set_hl(0, "CodeMeActivityLow", { fg = colors.activity_low })
-	vim.api.nvim_set_hl(0, "CodeMeActivityMed", { fg = colors.activity_med })
-	vim.api.nvim_set_hl(0, "CodeMeActivityHigh", { fg = colors.activity_high })
 end
 
--- Auto-reload highlights when colorscheme changes
 function M.setup_autocmd()
 	vim.api.nvim_create_autocmd("ColorScheme", {
 		group = vim.api.nvim_create_augroup("CodeMeColors", { clear = true }),
 		callback = function()
-			-- Small delay to let colorscheme fully load
-			vim.defer_fn(function()
-				M.setup()
-			end, 50)
+			vim.defer_fn(M.setup, 50)
 		end,
 	})
 end

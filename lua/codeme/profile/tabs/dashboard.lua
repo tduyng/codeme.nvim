@@ -39,7 +39,7 @@ function M.render()
 	elseif progress_pct >= 50 then
 		hero_msg, hero_icon, hero_color = "Great Progress!", "⭐", "exyellow"
 	elseif today_time > 0 then
-		hero_msg, hero_icon, hero_color = "Keep Going!", "💪", "exblue"
+		hero_msg, hero_icon, hero_color = "Keep Going!", "💪", "exgreen"
 	else
 		local greeting = hour < 12 and "Rise & Code" or hour < 18 and "Code Time" or "Night Session"
 		hero_msg, hero_icon, hero_color = greeting, "🌟", "commentfg"
@@ -55,7 +55,7 @@ function M.render()
 	table.insert(lines, {})
 
 	-- TODAY AT A GLANCE
-	local focus_str = focus_score > 0 and tostring(focus_score) .. "/100" or "N/A"
+	local focus_str = focus_score > 0 and tostring(focus_score) .. "/100" or ""
 
 	-- Create metrics table
 	local metrics_tbl = {
@@ -147,7 +147,7 @@ function M.render()
 	table.insert(lines, {})
 
 	-- Visual flame meter based on streak
-	local current_streak = s.streak_info.current or 0
+	local current_streak = (s.streak_info.current or 0) + 1
 	local longest_streak = s.streak_info.longest or 0
 	local flame_display
 	local streak_hl
