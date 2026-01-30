@@ -1,63 +1,96 @@
 local M = {}
 
-function M.show_today()
-	local codeme = require("codeme")
-	local util = require("codeme.util")
+-- State storage
+local _state = {
+	stats = nil,
+	last_fetch = 0,
+	active_tab = 1,
+	win = nil,
+	buf = nil,
+}
 
-	codeme.get_stats(function(stats)
-		if not stats or not stats.today then
-			vim.notify("No activity recorded for today", vim.log.levels.INFO, { title = "CodeMe Today" })
-			return
-		end
+-- Cache TTL (5 minutes)
+local CACHE_TTL = 300
 
-		local today = stats.today
-		local time = util.format_duration(today.time or 0)
-		local lines = util.format_number(today.lines or 0)
-		local files = today.files or 0
+---Get cached stats or nil if expired
+---@return table|nil
+function M.get_stats()
+	if not _state.stats then
+		return nil
+	end
 
-		local msg = string.format("⏱️  Time: %s\n📝 Lines: %s\n📄 Files: %d", time, lines, files)
+	local elapsed = os.time() - _state.last_fetch
+	if elapsed > CACHE_TTL then
+		return nil
+	end
 
-		vim.notify(msg, vim.log.levels.INFO, { title = "CodeMe Today" })
-	end)
+	return _state.stats
 end
 
-function M.show_projects()
-	local codeme = require("codeme")
-	local util = require("codeme.util")
+---Set stats cache
+---@param stats table
+function M.set_stats(stats)
+	_state.stats = stats
+	_state.last_fetch = os.time()
+end
 
-	codeme.get_stats(function(stats)
-		if not stats or not stats.projects or vim.tbl_count(stats.projects) == 0 then
-			vim.notify("No projects recorded yet", vim.log.levels.INFO, { title = "CodeMe Projects" })
-			return
-		end
+---Invalidate stats cache
+function M.invalidate_stats()
+	_state.stats = nil
+	_state.last_fetch = 0
+end
 
-		-- Sort projects by time
-		local projects = {}
-		for name, data in pairs(stats.projects) do
-			table.insert(projects, {
-				name = name,
-				time = data.time or 0,
-				lines = data.lines or 0,
-				files = data.files or 0,
-			})
-		end
+---Get active tab index
+---@return number
+function M.get_active_tab()
+	return _state.active_tab
+end
 
-		table.sort(projects, function(a, b)
-			return a.time > b.time
-		end)
+---Set active tab index
+---@param tab number
+function M.set_active_tab(tab)
+	_state.active_tab = tab
+end
 
-		-- Build message
-		local lines = {}
-		for i = 1, math.min(5, #projects) do
-			local proj = projects[i]
-			local time = util.format_duration(proj.time)
-			local line_count = util.format_number(proj.lines)
-			table.insert(lines, string.format("%s: %s, %s lines", proj.name, time, line_count))
-		end
+---Get window handle
+---@return number|nil
+function M.get_win()
+	if _state.win and vim.api.nvim_win_is_valid(_state.win) then
+		return _state.win
+	end
+	return nil
+end
 
-		local msg = table.concat(lines, "\n")
-		vim.notify(msg, vim.log.levels.INFO, { title = "Top Projects" })
-	end)
+---Set window handle
+---@param win number
+function M.set_win(win)
+	_state.win = win
+end
+
+---Get buffer handle
+---@return number|nil
+function M.get_buf()
+	if _state.buf and vim.api.nvim_buf_is_valid(_state.buf) then
+		return _state.buf
+	end
+	return nil
+end
+
+---Set buffer handle
+---@param buf number
+function M.set_buf(buf)
+	_state.buf = buf
+end
+
+---Reset all state
+function M.reset()
+	_state = {
+		stats = nil,
+		last_fetch = 0,
+		active_tab = 1,
+		win = nil,
+		buf = nil,
+	}
 end
 
 return M

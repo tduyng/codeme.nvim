@@ -1,201 +1,165 @@
 # codeme.nvim
 
-> Beautiful coding activity dashboard for Neovim
+> Beautiful coding dashboard for Neovim
+
+Zero config. 100% private. Auto-adapts to your colorscheme.
+
+![Overview](./docs/img/overview.png)
 
 ## Features
 
-- 100% private and local - all data stored in SQLite on your machine
-- Tab-based dashboard with 6 interactive views
-- GitHub-style contribution heatmap (12 weeks)
-- Language and project breakdowns with visual bar graphs
-- Daily goals with progress tracking
-- Streak tracking with flame visualization
-- Achievements and gamification
-- Session tracking for focused coding periods
-- Trend comparisons (today vs yesterday, this week vs last)
-- Peak productivity insights
-- Auto-tracking on file save
-- Zero config - works out of the box
-- **Adaptive colorscheme** - automatically adapts to ANY Neovim colorscheme (Catppuccin, Gruvbox, Tokyo Night, Nord, etc.)
-- Smooth colorscheme transitions - updates instantly when you change themes
+- Local-only, privacy-first SQLite storage
+- Heatmaps, streaks, achievements, and daily goals
+- Automatic session tracking with idle detection and theme support
 
-## Privacy
+## Prerequisites
 
-Your coding data never leaves your machine:
+codeme.nvim requires the [codeme binary](https://github.com/tduyng/codeme) (the backend) to be installed on your system.
+The plugin does not install it automatically, you need to set it up once before first use.
 
-- SQLite database stored locally at `~/.local/share/codeme/`
-- No accounts, no cloud sync, no telemetry
-- You own your data
+**Easiest way — download a prebuilt binary** (no Go or compiler needed):
 
-## Installation
+→ [GitHub Releases](https://github.com/tduyng/codeme/releases/latest)
 
-### Prerequisites
+Pick the one for your platform, extract it, and put it somewhere on your `PATH`.
 
-- Neovim >= 0.11
-- [Codeme binary](https://github.com/tduyng/codeme) - auto-installed on first use
+**Or install with Go** (requires [Go 1.25+](https://go.dev/dl/) and a C compiler):
 
-### Using lazy.nvim
+```bash
+go install github.com/tduyng/codeme@latest
+```
+
+> See the [codeme backend repo](https://github.com/tduyng/codeme) for full install options and details.
+
+After install, verify it works:
+
+```bash
+codeme stats
+```
+
+## Install
+
+### lazy.nvim
 
 ```lua
 {
   "tduyng/codeme.nvim",
+  cmd = { "CodeMe", "CodeMeToggle" },
   config = function()
-    require("codeme").setup({
-      -- Optional configuration
-      auto_install = true,  -- Auto-install binary if not found (default: true)
-      auto_track = true,    -- Auto track on save (default: true)
-    })
+    require("codeme").setup()
   end,
-  cmd = { "CodeMe", "CodeMeToggle", "CodeMeInstall" },
 }
 ```
 
-### Using native vim.pack (Neovim 0.12+)
+### vim.pack (Neovim 0.12+)
 
 ```lua
-vim.pack.add({
-  "https://github.com/tduyng/codeme.nvim",
-})
-
+vim.pack.add("https://github.com/tduyng/codeme.nvim")
 require("codeme").setup()
-```
-
-### Binary Installation
-
-The codeme binary will be **automatically installed** on first use. If you prefer manual installation:
-
-```bash
-# Download from GitHub releases
-# Go to https://github.com/tduyng/codeme/releases
-# Download for your platform (macOS arm64 or x86_64)
-
-# Or use the Neovim command
-:CodeMeInstall
 ```
 
 ## Usage
 
-### Commands
-
-| Command           | Description                              |
-| ----------------- | ---------------------------------------- |
-| `:CodeMe`         | Open the beautiful dashboard             |
-| `:CodeMeToggle`   | Toggle dashboard visibility              |
-| `:CodeMeToday`    | Show today's stats notification          |
-| `:CodeMeProjects` | Show project breakdown                   |
-| `:CodeMeInstall`  | Install/update codeme binary from GitHub |
-| `:CodeMeVersion`  | Show installed codeme version            |
-
-### Dashboard
-
-**Navigation**
-
-- `<Tab>` or `L` - Next tab
-- `<S-Tab>` or `H` - Previous tab
-- `1-6` - Jump to specific tab
-- `q` or `<Esc>` - Close dashboard
-
-**Tabs**
-
-1. **☀️ Today** - Today's coding session with time, lines, files, languages, top files, sessions, hourly activity, and daily goal progress
-2. **📅 Weekly** - Week summary with comparison to last week and GitHub-style contribution heatmap
-3. **📊 Overview** - Overall stats with streak flames, coding trends, and totals
-4. **💡 Insights** - Peak productivity times, comparisons, and achievements
-5. **💻 Languages** - Top languages breakdown with time and lines
-6. **🔥 Projects** - Active projects breakdown
-
-#### Today
-
-![today](./docs/img/today.png)
-
-#### Overview
-
-![overview](./docs/img/overview.png)
-
-#### Languages
-
-![languages](./docs/img/languages.png)
-
-#### Projects
-
-![projects](./docs/img/projects.png)
-
-## Configuration
-
-```lua
-require("codeme").setup({
-  -- Binary settings
-  codeme_bin = "codeme",      -- Binary name (auto-detected if installed)
-  auto_install = true,        -- Auto-install binary if not found
-
-  -- Tracking settings
-  auto_track = true,          -- Track files on save
-  track_on_idle = false,      -- Track on cursor idle (not implemented)
-
-  -- UI settings
-  verbose = false,            -- Show tracking notifications
-
-  -- Daily goals (set to 0 to disable)
-  goals = {
-    daily_hours = 4,          -- Daily goal in hours
-    daily_lines = 500,        -- Daily goal in lines
-  },
-})
+```vim
+:CodeMe         " Open dashboard
+:CodeMeToggle   " Toggle visibility
+:CodeMeToday    " Today's stats notification
 ```
 
-### Custom Keybinding
+**Keybinding example:**
 
 ```lua
-vim.keymap.set("n", "<leader>cm", "<cmd>CodeMe<cr>", { desc = "Open CodeMe Dashboard" })
-vim.keymap.set("n", "<leader>ct", "<cmd>CodeMeToggle<cr>", { desc = "Toggle CodeMe" })
+vim.keymap.set("n", "<leader>cm", "<cmd>CodeMe<cr>")
 ```
 
-## Colorscheme Support
+## Dashboard
 
-CodeMe automatically adapts to **ANY** Neovim colorscheme! It intelligently extracts colors from your active theme's highlight groups, ensuring the dashboard always looks beautiful and cohesive.
+**Navigate:**
 
-### How it works
+- `Tab` / `L` → Next tab
+- `Shift-Tab` / `H` → Previous tab
+- `1-5` → Jump to tab
+- `q` / `Esc` → Close
 
-- **Automatic color extraction** - Colors are pulled from standard highlight groups (String, Function, Error, etc.)
-- **Instant updates** - Dashboard colors update automatically when you change colorschemes
-- **Universal compatibility** - Works with ALL colorschemes: Catppuccin, Gruvbox, Tokyo Night, Nord, Everforest, Kanagawa, and more
-- **Graceful fallbacks** - If a color isn't found, it intelligently falls back to ensure nothing breaks
+**Tabs:**
 
-### Example
+| Tab              | Content                                  |
+| ---------------- | ---------------------------------------- |
+| 📊 **Dashboard** | Goals, streaks, performance overview     |
+| ⏰ **Activity**  | Today's sessions, languages, files       |
+| 📅 **Weekly**    | Daily breakdown, weekly trends           |
+| 📁 **Work**      | Projects and languages breakdown         |
+| 🏆 **Records**   | Personal bests, achievements, milestones |
 
-```lua
--- Switch colorscheme anytime - CodeMe adapts instantly!
-vim.cmd.colorscheme("catppuccin")
-vim.cmd("CodeMe")
+![Today](./docs/img/today.png)
 
--- Change to Gruvbox - dashboard colors update automatically
-vim.cmd.colorscheme("gruvbox")
-vim.cmd("CodeMe")
+![Languages](./docs/img/languages.png)
 
--- Try Tokyo Night - perfect color harmony maintained
-vim.cmd.colorscheme("tokyonight")
-vim.cmd("CodeMe")
-```
-
-No configuration needed - it just works! The dashboard will always match your editor's aesthetic.
+![Projects](./docs/img/projects.png)
 
 ## Achievements
 
 Unlock achievements as you code:
 
-| Achievement            | Description                      |
-| ---------------------- | -------------------------------- |
-| 🎯 First Steps         | Track your first coding activity |
-| 🔥 Getting Started     | Maintain a 3-day coding streak   |
-| ⚡ Weekly Warrior      | Maintain a 7-day coding streak   |
-| 👑 Monthly Master      | Maintain a 30-day coding streak  |
-| 💻 Code Machine        | Write 1,000 lines of code        |
-| 🚀 Prolific Programmer | Write 10,000 lines of code       |
-| ⏰ Dedicated Developer | Code for 10 hours total          |
-| 🏆 Century Coder       | Code for 100 hours total         |
-| 🌍 Polyglot            | Code in 5 different languages    |
-| 🌅 Early Bird          | Code before 7 AM                 |
-| 🦉 Night Owl           | Code after midnight              |
+| Icon | Name              | Unlock              |
+| ---- | ----------------- | ------------------- |
+| 🔥   | 5-Day Fire        | 5-day streak        |
+| 🧨   | 30-Day Streak     | 30-day streak       |
+| 💥   | 90-Day Inferno    | 90-day streak       |
+| 🌋   | 180-Day Blaze     | 180-day streak      |
+| 🌞   | Eternal Flame     | 365-day streak      |
+| 🌧️   | 1K Line Wave      | 1,000 lines         |
+| ⚡   | 10K Line Surge    | 10,000 lines        |
+| ⛈️   | 50K Line Flood    | 50,000 lines        |
+| 🌊   | 100K Line Ocean   | 100,000 lines       |
+| ⚡   | 50h Spark         | 50 hours total      |
+| 🌩️   | 1K h Lightning    | 1,000 hours         |
+| ⛈️   | 5K h Thunder      | 5,000 hours         |
+| 🌀   | 10K h Mastery     | 10,000 hours        |
+| 💡   | 20K h Grandmaster | 20,000 hours        |
+| 🚀   | Bilingual         | 2 languages         |
+| 🌍   | Polyglot          | 5 languages         |
+| 🧠   | Polyglot Master   | 10 languages        |
+| 🎓   | Code Polymath     | 15 languages        |
+| 🌅   | Dawn Coder        | Code before 6 AM    |
+| 🌌   | Night Coder       | Code after midnight |
+| ☕   | 2h Warm Up        | 2+ hour session     |
+| 🎯   | 4h Focus          | 4+ hour session     |
+| 🌊   | 6h Flow State     | 6+ hour session     |
+| 🧠   | 8h Deep Work      | 8+ hour session     |
+| 🧘‍♂️   | 10h Monk Mode     | 10+ hour session    |
+| 👑   | 12h Legendary     | 12+ hour session    |
+
+## Configuration
+
+Here are the default configs:
+
+```lua
+require("codeme").setup({
+  -- Binary
+  codeme_bin = "codeme",     -- Auto-detected
+
+  -- Tracking
+  auto_track = true,         -- Track on save
+  verbose = false,           -- Show notifications
+
+  -- Goals (0 to disable)
+  goals = {
+    daily_hours = 4,         -- Hours per day
+    daily_lines = 500,       -- Lines per day
+  },
+})
+```
+
+### Binary lookup order
+
+The plugin searches for the `codeme` binary in this order:
+
+1. `CODEME_BIN` environment variable
+2. System `PATH` (i.e. the default `codeme` command)
+3. `~/.local/share/nvim/codeme/codeme` (local data directory)
+
+If none is found, the plugin will show an error when you open the dashboard. Install the backend using the instructions in [Prerequisites](#prerequisites).
 
 ## License
 
@@ -203,4 +167,4 @@ MIT
 
 ---
 
-Made with ❤️ for the Neovim community
+Made with ❤️ for Neovim

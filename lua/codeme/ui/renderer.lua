@@ -1,16 +1,23 @@
 local M = {}
-local api = vim.api
 
--- Core: String width (handles unicode)
-M.strwidth = api.nvim_strwidth
+---String width (unicode-aware)
+---@param s string
+---@return number
+M.strwidth = vim.api.nvim_strwidth
 
--- Core: Pad string to width
+---Pad string to width
+---@param s string
+---@param w number
+---@return string
 function M.pad(s, w)
 	local diff = w - M.strwidth(s or "")
 	return (s or "") .. (diff > 0 and string.rep(" ", diff) or "")
 end
 
--- Core: Truncate with ellipsis
+---Truncate with ellipsis
+---@param s string
+---@param w number
+---@return string
 function M.truncate(s, w)
 	if M.strwidth(s or "") <= w then
 		return s or ""
@@ -18,13 +25,10 @@ function M.truncate(s, w)
 	return string.sub(s, 1, w - 1) .. "…"
 end
 
---------------------------------------------------------------------------------
--- COMPONENTS
---------------------------------------------------------------------------------
-
--- Simple table renderer
--- @param rows: array of arrays (first = header)
--- @param width: max width
+---Build table component
+---@param rows table[] Array of rows (first row is header)
+---@param width number Max width
+---@return table[] Lines with highlight segments
 function M.table(rows, width)
 	if not rows or #rows == 0 or not rows[1] then
 		return {}
@@ -45,8 +49,8 @@ function M.table(rows, width)
 		end
 	end
 
-	-- Scale if too wide
-	local total = 4 + ncols * 3 -- borders + padding
+	-- Scale if needed
+	local total = 4 + ncols * 3
 	for c = 1, ncols do
 		total = total + widths[c]
 	end
@@ -57,7 +61,7 @@ function M.table(rows, width)
 		end
 	end
 
-	-- Border builder
+	-- Build borders
 	local function border(l, m, r)
 		local parts = {}
 		for c = 1, ncols do
@@ -87,17 +91,11 @@ function M.table(rows, width)
 	return out
 end
 
--- Tabs header (inline style)
+---Build tabs header
+---@param names string[] Tab names
+---@param active number Active tab index
+---@return table[] Lines
 function M.tabs(names, active)
-	if type(active) == "string" then
-		for i, n in ipairs(names) do
-			if n == active then
-				active = i
-				break
-			end
-		end
-	end
-
 	local line = { { "  ", "normal" } }
 	for i, name in ipairs(names) do
 		local hl = i == active and "exgreen" or "commentfg"
@@ -110,7 +108,11 @@ function M.tabs(names, active)
 	return { line }
 end
 
--- Progress bar (returns segments for inline use)
+---Build progress bar
+---@param pct number 0-100
+---@param w number Width in characters
+---@param filled_hl string Highlight for filled portion
+---@return table[] Segments
 function M.progress(pct, w, filled_hl)
 	pct = math.max(0, math.min(100, pct or 0))
 	local filled = math.floor(pct / 100 * w)
@@ -120,7 +122,35 @@ function M.progress(pct, w, filled_hl)
 	}
 end
 
--- GitHub-style heatmap with month context and date ranges
+---Render lines to buffer using extmarks
+---@param buf number Buffer handle
+---@param lines table[] Lines with highlight segments
+---@param ns number Namespace
+---@param width number Window width
+function M.render(buf, lines, ns, width)
+	vim.bo[buf].modifiable = true
+
+	-- Clear previous
+	vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+
+	-- Set empty lines
+	local empty = {}
+	for _ = 1, #lines do
+		empty[#empty + 1] = string.rep(" ", width)
+	end
+	vim.api.nvim_buf_set_lines(buf, 0, -1, true, empty)
+
+	-- Render with extmarks
+	for i, line in ipairs(lines) do
+		vim.api.nvim_buf_set_extmark(buf, ns, i - 1, 0, {
+			virt_text = line,
+			virt_text_pos = "overlay",
+		})
+	end
+
+	vim.bo[buf].modifiable = false
+end
+
 function M.heatmap(days)
 	if not days or #days == 0 then
 		return { { { "  No activity data", "commentfg" } } }
@@ -332,35 +362,6 @@ function M.heatmap(days)
 	table.insert(out, legend)
 
 	return out
-end
-
---------------------------------------------------------------------------------
--- RENDERING (minimal extmark-based renderer)
---------------------------------------------------------------------------------
-
--- Render all lines to buffer
-function M.render(buf, lines, ns, width)
-	vim.bo[buf].modifiable = true
-
-	-- Clear previous
-	api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-
-	-- Set empty lines as base
-	local empty = {}
-	for _ = 1, #lines do
-		empty[#empty + 1] = string.rep(" ", width)
-	end
-	api.nvim_buf_set_lines(buf, 0, -1, true, empty)
-
-	-- Render extmarks
-	for i, line in ipairs(lines) do
-		api.nvim_buf_set_extmark(buf, ns, i - 1, 0, {
-			virt_text = line,
-			virt_text_pos = "overlay",
-		})
-	end
-
-	vim.bo[buf].modifiable = false
 end
 
 return M

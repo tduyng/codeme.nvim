@@ -1,54 +1,62 @@
-local state = require("codeme.profile.state")
-local fmt = require("codeme.profile.formatters")
-local helpers = require("codeme.profile.helpers")
-local ui = require("codeme.ui")
+local domain = require("codeme.domain")
+local renderer = require("codeme.ui.renderer")
 
 local M = {}
 
-function M.render()
-	local globalStats = state.stats or {}
+function M.render(stats)
 	local lines = {}
 
 	table.insert(lines, {})
 	table.insert(lines, { { "  🏆 Hall of Fame", "exgreen" } })
 	table.insert(lines, {})
 
-	-- CAREER STATS (Quick overview table)
+	-- Career Stats
 	table.insert(lines, { { "  📊 Career Stats", "exgreen" } })
 	table.insert(lines, {})
+
+	local today = stats.today or {}
+	local this_week = stats.this_week or {}
+	local this_month = stats.this_month or {}
+	local all_time = stats.all_time or {}
 
 	local stats_tbl = {
 		{ "Period", "Time", "Lines", "Files" },
 		{
 			"Today",
-			fmt.fmt_time(globalStats.today.total_time or 0),
-			fmt.fmt_num(globalStats.today.total_lines or 0),
-			tostring(globalStats.today.total_files or 0),
+			domain.format_duration(today.total_time or 0),
+			domain.format_number(today.total_lines or 0),
+			tostring(today.total_files or 0),
 		},
 		{
 			"This Week",
-			fmt.fmt_time(globalStats.this_week.total_time or 0),
-			fmt.fmt_num(globalStats.this_week.total_lines or 0),
-			tostring(globalStats.this_week.total_files or 0),
+			domain.format_duration(this_week.total_time or 0),
+			domain.format_number(this_week.total_lines or 0),
+			tostring(this_week.total_files or 0),
+		},
+		{
+			"This Month",
+			domain.format_duration(this_month.total_time or 0),
+			domain.format_number(this_month.total_lines or 0),
+			tostring(this_month.total_files or 0),
 		},
 		{
 			"All Time",
-			fmt.fmt_time(globalStats.all_time.total_time or 0),
-			fmt.fmt_num(globalStats.all_time.total_lines or 0),
-			tostring(globalStats.all_time.total_files or 0),
+			domain.format_duration(all_time.total_time or 0),
+			domain.format_number(all_time.total_lines or 0),
+			tostring(all_time.total_files or 0),
 		},
 	}
 
-	for _, l in ipairs(ui.table(stats_tbl, state.width - 8)) do
+	for _, l in ipairs(renderer.table(stats_tbl, 120)) do
 		table.insert(lines, l)
 	end
 	table.insert(lines, {})
 
-	-- CAREER LEVEL
+	-- Career Level
 	table.insert(lines, { { "  🎯 Career Level", "exgreen" } })
 	table.insert(lines, {})
 
-	local total_hours = math.floor((globalStats.all_time.total_time or 0) / 3600)
+	local total_hours = math.floor((all_time.total_time or 0) / 3600)
 	local milestones = {
 		{ threshold = 100000, name = "Legendary", icon = "👑", color = "exgreen" },
 		{ threshold = 50000, name = "Master", icon = "🏅", color = "exgreen" },
@@ -92,7 +100,7 @@ function M.render()
 
 		table.insert(lines, {})
 		local progress_line = { { "  Next: " .. next_level.icon .. " " .. next_level.name .. "  ", "commentfg" } }
-		for _, seg in ipairs(ui.progress(progress_pct, 20, "exyellow")) do
+		for _, seg in ipairs(renderer.progress(progress_pct, 20, "exyellow")) do
 			table.insert(progress_line, seg)
 		end
 		table.insert(progress_line, { string.format(" %d%%", progress_pct), "exyellow" })
@@ -112,26 +120,24 @@ function M.render()
 
 	table.insert(lines, {})
 
-	-- RECORDS
+	-- Records
 	table.insert(lines, { { "  🏆 Your Records", "exgreen" } })
 	table.insert(lines, {})
 
-	local records = globalStats.records or {}
+	local records = stats.records or {}
 	local record_list = {}
 
-	-- Most Productive Day
 	local most_productive_day = records.most_productive_day or {}
 	if most_productive_day.time and most_productive_day.time > 0 then
 		table.insert(record_list, {
 			icon = "🏆",
 			title = "Best Day",
-			value = fmt.fmt_time(most_productive_day.time),
-			detail = most_productive_day.date and fmt.fmt_date_full(most_productive_day.date) or "",
-			extra = most_productive_day.lines and fmt.fmt_num(most_productive_day.lines) .. " lines" or "",
+			value = domain.format_duration(most_productive_day.time),
+			detail = most_productive_day.date and domain.format_date(most_productive_day.date) or "",
+			extra = most_productive_day.lines and domain.format_number(most_productive_day.lines) .. " lines" or "",
 		})
 	end
 
-	-- Longest Session
 	local longest_session = records.longest_session or {}
 	if longest_session.duration and longest_session.duration > 0 then
 		local time_range = ""
@@ -142,31 +148,29 @@ function M.render()
 		table.insert(record_list, {
 			icon = "⏱️",
 			title = "Longest Session",
-			value = fmt.fmt_time(longest_session.duration),
-			detail = longest_session.date and fmt.fmt_date_full(longest_session.date) or "",
+			value = domain.format_duration(longest_session.duration),
+			detail = longest_session.date and domain.format_date(longest_session.date) or "",
 			extra = time_range,
 		})
 	end
 
-	-- Highest Output
 	local highest_daily_output = records.highest_daily_output or {}
 	if highest_daily_output.lines and highest_daily_output.lines > 0 then
 		table.insert(record_list, {
 			icon = "📝",
 			title = "Most Lines",
-			value = fmt.fmt_num(highest_daily_output.lines) .. " lines",
-			detail = highest_daily_output.date and fmt.fmt_date_full(highest_daily_output.date) or "",
+			value = domain.format_number(highest_daily_output.lines) .. " lines",
+			detail = highest_daily_output.date and domain.format_date(highest_daily_output.date) or "",
 			extra = highest_daily_output.session_count and highest_daily_output.session_count .. " sessions" or "",
 		})
 	end
 
-	-- Best Streak
 	local best_streak = records.best_streak or {}
 	if best_streak.day_count and best_streak.day_count > 0 then
-		local streak_icon, _ = fmt.get_streak_display(best_streak.day_count)
+		local streak_icon, _ = domain.get_streak_display(best_streak.day_count)
 		local date_range = ""
 		if best_streak.start_date and best_streak.end_date then
-			date_range = fmt.fmt_date_range(best_streak.start_date, best_streak.end_date)
+			date_range = best_streak.start_date:sub(6, 10) .. " - " .. best_streak.end_date:sub(6, 10)
 		end
 
 		table.insert(record_list, {
@@ -174,11 +178,10 @@ function M.render()
 			title = "Best Streak",
 			value = best_streak.day_count .. " days " .. streak_icon,
 			detail = date_range,
-			extra = best_streak.total_time and fmt.fmt_time(best_streak.total_time) .. " total" or "",
+			extra = best_streak.total_time and domain.format_duration(best_streak.total_time) .. " total" or "",
 		})
 	end
 
-	-- Display records as table
 	if #record_list > 0 then
 		local records_tbl = { { "Trophy", "Record", "Date", "Details" } }
 
@@ -191,13 +194,13 @@ function M.render()
 			})
 		end
 
-		for _, l in ipairs(ui.table(records_tbl, state.width - 8)) do
+		for _, l in ipairs(renderer.table(records_tbl, 120)) do
 			table.insert(lines, l)
 		end
 		table.insert(lines, {})
 	end
 
-	-- FUN FACTS
+	-- Fun Facts
 	local earliest_start = records.earliest_start or {}
 	local latest_end = records.latest_end or {}
 	local most_languages_day = records.most_languages_day or {}
@@ -227,7 +230,7 @@ function M.render()
 		end
 
 		if most_languages_day and most_languages_day.date and most_languages_day.date ~= "" then
-			local languages_count = helpers.safe_length(most_languages_day.languages)
+			local languages_count = domain.safe_length(most_languages_day.languages)
 			if languages_count > 0 then
 				table.insert(lines, {
 					{ "  🌍 ", "normal" },
@@ -241,8 +244,8 @@ function M.render()
 		table.insert(lines, {})
 	end
 
-	-- ACHIEVEMENTS
-	local achievements = globalStats.achievements or {}
+	-- Achievements
+	local achievements = stats.achievements or {}
 	if #achievements > 0 then
 		table.insert(lines, { { "  🎖️ Achievements", "exgreen" } })
 		table.insert(lines, {})
@@ -258,7 +261,6 @@ function M.render()
 			end
 		end
 
-		-- Show unlocked achievements
 		if #unlocked > 0 then
 			for _, ach in ipairs(unlocked) do
 				table.insert(lines, {
@@ -270,7 +272,6 @@ function M.render()
 			end
 		end
 
-		-- Show locked achievements (just count)
 		if #locked > 0 then
 			table.insert(lines, {})
 			table.insert(lines, {
@@ -279,11 +280,10 @@ function M.render()
 			})
 		end
 
-		-- Progress summary
 		table.insert(lines, {})
 		local ach_pct = math.floor((#unlocked / #achievements) * 100)
 		local ach_line = { { "  Progress: ", "commentfg" } }
-		for _, seg in ipairs(ui.progress(ach_pct, 20, "exgreen")) do
+		for _, seg in ipairs(renderer.progress(ach_pct, 20, "exgreen")) do
 			table.insert(ach_line, seg)
 		end
 		table.insert(ach_line, { string.format(" %d%%", ach_pct), "exgreen" })
@@ -293,20 +293,21 @@ function M.render()
 		table.insert(lines, {})
 	end
 
-	-- CHALLENGES
+	-- Challenges
 	table.insert(lines, { { "  💪 Can You Beat These?", "exgreen" } })
 	table.insert(lines, {})
 
-	local current_streak = globalStats.streak or 0
+	local streak_info = stats.streak_info or {}
+	local current_streak = (streak_info.current or 0) + 1
 	local challenges = {}
 
 	if most_productive_day.time then
-		local today_time = globalStats.today_time or 0
+		local today_time = today.total_time or 0
 		local gap = most_productive_day.time - today_time
 		if gap > 0 and today_time > 0 then
 			table.insert(challenges, {
 				icon = "🎯",
-				text = fmt.fmt_time(gap) .. " more to beat your best day",
+				text = domain.format_duration(gap) .. " more to beat your best day",
 				color = gap < 3600 and "exgreen" or "exyellow",
 			})
 		end
@@ -332,7 +333,7 @@ function M.render()
 	if longest_session.duration then
 		table.insert(challenges, {
 			icon = "⏰",
-			text = "Can you beat " .. fmt.fmt_time(longest_session.duration) .. " in one session?",
+			text = "Can you beat " .. domain.format_duration(longest_session.duration) .. " in one session?",
 			color = "exyellow",
 		})
 	end
