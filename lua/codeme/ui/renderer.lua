@@ -185,8 +185,8 @@ function M.heatmap(days)
 
 	-- Helper: Calculate date range for a week (numeric format: "02-08" or "30-05")
 	local function get_week_range(week)
-		local first_day = week[1].date -- Monday
-		local last_day = week[7].date -- Sunday
+		local first_day = week[1].date
+		local last_day = week[#week].date -- Last day of week (may be incomplete)
 
 		local f_parsed = parse_date(first_day)
 		local l_parsed = parse_date(last_day)
@@ -202,7 +202,8 @@ function M.heatmap(days)
 		for j = i, math.min(i + 6, #days) do
 			week[#week + 1] = days[j]
 		end
-		if #week == 7 then -- Only add complete weeks
+		-- Accept incomplete weeks (for smart date ranges)
+		if #week > 0 then
 			weeks[#weeks + 1] = week
 		end
 	end
@@ -210,14 +211,19 @@ function M.heatmap(days)
 	-- Calculate statistics for summary
 	local max_time = 0
 	local active_days = 0
+	local total_non_future_days = 0
 	for _, day in ipairs(days) do
-		if day.time and day.time > 0 then
-			active_days = active_days + 1
-			max_time = math.max(max_time, day.time)
+		-- Only count non-future days
+		if day.level ~= -1 then
+			total_non_future_days = total_non_future_days + 1
+			if day.time and day.time > 0 then
+				active_days = active_days + 1
+				max_time = math.max(max_time, day.time)
+			end
 		end
 	end
 
-	local consistency = #days > 0 and math.floor((active_days / #days) * 100) or 0
+	local consistency = total_non_future_days > 0 and math.floor((active_days / total_non_future_days) * 100) or 0
 
 	-- Format max time as "4h 10m"
 	local function format_time(seconds)
@@ -286,7 +292,7 @@ function M.heatmap(days)
 		{ { "  🗓️  Activity Heatmap (Last " .. #weeks .. " Weeks)", "exgreen" } },
 		{
 			{ "  📊 ", "exyellow" },
-			{ string.format("%d/%d days active", active_days, #days), "normal" },
+			{ string.format("%d/%d days active", active_days, total_non_future_days), "normal" },
 			{ string.format(" (%d%% consistency)", consistency), "commentfg" },
 			{ " • Peak: ", "commentfg" },
 			{ format_time(max_time), "exgreen" },
@@ -313,22 +319,28 @@ function M.heatmap(days)
 			local line = { { "  " .. week_info.label .. " ", week_info.show_year and "exgreen" or "commentfg" } }
 
 			-- Day cells
-			for _, day in ipairs(week_info.week) do
-				local lvl = math.max(0, math.min(4, day.level or 0))
+			for i = 1, 7 do
+				local day = week_info.week[i]
+				if day then
+					local lvl = math.max(0, math.min(4, day.level or 0))
 
-				-- Mark current week's today with *
-				local is_today = (day.date == today)
-				local cell = chars[lvl + 1]
+					-- Mark current week's today with *
+					local is_today = (day.date == today)
+					local cell = chars[lvl + 1]
 
-				if day.level == -1 then
-					-- Future day
-					table.insert(line, { "·   ", "commentfg" })
-				else
-					if is_today and is_current then
-						table.insert(line, { cell .. "*  ", colors[lvl + 1] })
+					if day.level == -1 then
+						-- Future day
+						table.insert(line, { "·   ", "commentfg" })
 					else
-						table.insert(line, { cell .. "   ", colors[lvl + 1] })
+						if is_today and is_current then
+							table.insert(line, { cell .. "*  ", colors[lvl + 1] })
+						else
+							table.insert(line, { cell .. "   ", colors[lvl + 1] })
+						end
 					end
+				else
+					-- Pad incomplete weeks with empty cells
+					table.insert(line, { "    ", "normal" })
 				end
 			end
 

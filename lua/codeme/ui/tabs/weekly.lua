@@ -26,6 +26,27 @@ local function get_weekday_date(weekday, monday)
 	return os.date("%Y-%m-%d", monday_time + ((weekday - 1) * 86400))
 end
 
+local function count_week_coding_days(daily_activity)
+	local today = os.date("*t")
+	local weekday = today.wday == 1 and 7 or today.wday - 1 -- Convert Sunday=1 to Monday=1 system
+
+	-- Count days coded so far this week
+	local days_coded = 0
+	for i = 1, weekday do
+		-- Calculate date for each day of the week so far
+		local days_back = weekday - i
+		local check_date = os.time() - (days_back * 24 * 60 * 60)
+		local date_str = os.date("%Y-%m-%d", check_date)
+
+		local stat = daily_activity[date_str]
+		if stat and stat.time and stat.time > 0 then
+			days_coded = days_coded + 1
+		end
+	end
+
+	return days_coded
+end
+
 function M.render(stats)
 	local lines = {}
 
@@ -100,7 +121,7 @@ function M.render(stats)
 	end
 	table.insert(lines, {})
 
-	-- 12 weeks activity headmap
+	-- 12 weeks activity heatmap
 	local hm = stats.weekly_heatmap
 	if hm and #hm > 0 then
 		table.insert(lines, { { "  📅 Activity Heatmap", "exgreen" } })
@@ -121,13 +142,7 @@ function M.render(stats)
 		{ domain.format_duration(daily_avg), "exgreen" },
 	})
 
-	local days_coded = 0
-	for _, stat in pairs(daily_activity) do
-		if stat.time and stat.time > 0 then
-			days_coded = days_coded + 1
-		end
-	end
-
+	local days_coded = count_week_coding_days(daily_activity)
 	table.insert(lines, {
 		{ "     Coding Days: ", "commentfg" },
 		{ string.format("%d/7", days_coded), "exgreen" },
@@ -138,7 +153,7 @@ function M.render(stats)
 		local arrow = diff > 0 and "↑" or diff < 0 and "↓" or "→"
 		local hl = diff > 0 and "exgreen" or diff < 0 and "exred" or "commentfg"
 		table.insert(lines, {
-			{ "  • vs Last Week: ", "commentfg" },
+			{ "     Vs Last Week: ", "commentfg" },
 			{ arrow, hl },
 			{ " " .. domain.format_duration(math.abs(diff)), hl },
 		})
