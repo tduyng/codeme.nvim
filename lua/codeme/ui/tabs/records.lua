@@ -1,4 +1,4 @@
-local domain = require("codeme.domain")
+local util = require("codeme.util")
 local renderer = require("codeme.ui.renderer")
 
 local M = {}
@@ -23,26 +23,26 @@ function M.render(stats)
 		{ "Period", "Time", "Lines", "Files" },
 		{
 			"Today",
-			domain.format_duration(today.total_time or 0),
-			domain.format_number(today.total_lines or 0),
+			util.format_duration(today.total_time or 0),
+			util.format_number(today.total_lines or 0),
 			tostring(today.total_files or 0),
 		},
 		{
 			"This Week",
-			domain.format_duration(this_week.total_time or 0),
-			domain.format_number(this_week.total_lines or 0),
+			util.format_duration(this_week.total_time or 0),
+			util.format_number(this_week.total_lines or 0),
 			tostring(this_week.total_files or 0),
 		},
 		{
 			"This Month",
-			domain.format_duration(this_month.total_time or 0),
-			domain.format_number(this_month.total_lines or 0),
+			util.format_duration(this_month.total_time or 0),
+			util.format_number(this_month.total_lines or 0),
 			tostring(this_month.total_files or 0),
 		},
 		{
 			"All Time",
-			domain.format_duration(all_time.total_time or 0),
-			domain.format_number(all_time.total_lines or 0),
+			util.format_duration(all_time.total_time or 0),
+			util.format_number(all_time.total_lines or 0),
 			tostring(all_time.total_files or 0),
 		},
 	}
@@ -132,9 +132,9 @@ function M.render(stats)
 		table.insert(record_list, {
 			icon = "🏆",
 			title = "Best Day",
-			value = domain.format_duration(most_productive_day.time),
-			detail = most_productive_day.date and domain.format_date(most_productive_day.date) or "",
-			extra = most_productive_day.lines and domain.format_number(most_productive_day.lines) .. " lines" or "",
+			value = util.format_duration(most_productive_day.time),
+			detail = most_productive_day.date and util.format_date(most_productive_day.date) or "",
+			extra = most_productive_day.lines and util.format_number(most_productive_day.lines) .. " lines" or "",
 		})
 	end
 
@@ -148,8 +148,8 @@ function M.render(stats)
 		table.insert(record_list, {
 			icon = "⏱️",
 			title = "Longest Session",
-			value = domain.format_duration(longest_session.duration),
-			detail = longest_session.date and domain.format_date(longest_session.date) or "",
+			value = util.format_duration(longest_session.duration),
+			detail = longest_session.date and util.format_date(longest_session.date) or "",
 			extra = time_range,
 		})
 	end
@@ -159,15 +159,15 @@ function M.render(stats)
 		table.insert(record_list, {
 			icon = "📝",
 			title = "Most Lines",
-			value = domain.format_number(highest_daily_output.lines) .. " lines",
-			detail = highest_daily_output.date and domain.format_date(highest_daily_output.date) or "",
+			value = util.format_number(highest_daily_output.lines) .. " lines",
+			detail = highest_daily_output.date and util.format_date(highest_daily_output.date) or "",
 			extra = highest_daily_output.session_count and highest_daily_output.session_count .. " sessions" or "",
 		})
 	end
 
 	local best_streak = records.best_streak or {}
 	if best_streak.day_count and best_streak.day_count > 0 then
-		local streak_icon, _ = domain.get_streak_display(best_streak.day_count)
+		local streak_icon, _ = util.get_streak_display(best_streak.day_count)
 		local date_range = ""
 		if best_streak.start_date and best_streak.end_date then
 			date_range = best_streak.start_date:sub(6, 10) .. " - " .. best_streak.end_date:sub(6, 10)
@@ -178,7 +178,7 @@ function M.render(stats)
 			title = "Best Streak",
 			value = best_streak.day_count .. " days " .. streak_icon,
 			detail = date_range,
-			extra = best_streak.total_time and domain.format_duration(best_streak.total_time) .. " total" or "",
+			extra = best_streak.total_time and util.format_duration(best_streak.total_time) .. " total" or "",
 		})
 	end
 
@@ -230,7 +230,7 @@ function M.render(stats)
 		end
 
 		if most_languages_day and most_languages_day.date and most_languages_day.date ~= "" then
-			local languages_count = domain.safe_length(most_languages_day.languages)
+			local languages_count = util.safe_length(most_languages_day.languages)
 			if languages_count > 0 then
 				table.insert(lines, {
 					{ "  🌍 ", "normal" },
@@ -307,7 +307,7 @@ function M.render(stats)
 		if gap > 0 and today_time > 0 then
 			table.insert(challenges, {
 				icon = "🎯",
-				text = domain.format_duration(gap) .. " more to beat your best day",
+				text = util.format_duration(gap) .. " more to beat your best day",
 				color = gap < 3600 and "exgreen" or "exyellow",
 			})
 		end
@@ -333,7 +333,7 @@ function M.render(stats)
 	if longest_session.duration then
 		table.insert(challenges, {
 			icon = "⏰",
-			text = "Can you beat " .. domain.format_duration(longest_session.duration) .. " in one session?",
+			text = "Can you beat " .. util.format_duration(longest_session.duration) .. " in one session?",
 			color = "exyellow",
 		})
 	end

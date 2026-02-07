@@ -1,4 +1,4 @@
-local domain = require("codeme.domain")
+local util = require("codeme.util")
 local renderer = require("codeme.ui.renderer")
 
 local M = {}
@@ -58,17 +58,17 @@ function M.render(stats)
 	local last_week_time = last_week.total_time or 0
 	local week_lines = this_week.total_lines or 0
 
-	local t_trend, t_hl = domain.get_trend(week_time, last_week_time)
+	local t_trend, t_hl = util.get_trend(week_time, last_week_time)
 
 	-- Header
 	table.insert(lines, {})
 	table.insert(lines, {
 		{ "  📅 Weekly Summary  ", "exgreen" },
 		{ "⏱️  ", "commentfg" },
-		{ domain.format_duration(week_time), "exgreen" },
+		{ util.format_duration(week_time), "exgreen" },
 		{ t_trend, t_hl },
 		{ "  │  📝 ", "commentfg" },
-		{ domain.format_number(week_lines), "exyellow" },
+		{ util.format_number(week_lines), "exyellow" },
 	})
 	table.insert(lines, {})
 
@@ -108,8 +108,8 @@ function M.render(stats)
 			tbl[#tbl + 1] = {
 				label,
 				date:sub(6, 10),
-				t > 0 and domain.format_duration(t) or "-",
-				l > 0 and domain.format_number(l) or "-",
+				t > 0 and util.format_duration(t) or "-",
+				l > 0 and util.format_number(l) or "-",
 				s > 0 and tostring(s) or "-",
 				t > 0 and "↗" or "-",
 			}
@@ -139,7 +139,7 @@ function M.render(stats)
 	local daily_avg = week_time > 0 and math.floor(week_time / 7) or 0
 	table.insert(lines, {
 		{ "     Daily Average: ", "commentfg" },
-		{ domain.format_duration(daily_avg), "exgreen" },
+		{ util.format_duration(daily_avg), "exgreen" },
 	})
 
 	local days_coded = count_week_coding_days(daily_activity)
@@ -155,7 +155,7 @@ function M.render(stats)
 		table.insert(lines, {
 			{ "     Vs Last Week: ", "commentfg" },
 			{ arrow, hl },
-			{ " " .. domain.format_duration(math.abs(diff)), hl },
+			{ " " .. util.format_duration(math.abs(diff)), hl },
 		})
 	end
 	local weekday_time, weekend_time = 0, 0

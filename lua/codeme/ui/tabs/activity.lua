@@ -1,4 +1,4 @@
-local domain = require("codeme.domain")
+local util = require("codeme.util")
 local renderer = require("codeme.ui.renderer")
 
 local M = {}
@@ -17,7 +17,7 @@ function M.render(stats)
 	table.insert(lines, {
 		{ "  ☀️  Today's Activity", "exgreen" },
 		{ string.rep(" ", 35), "commentfg" },
-		{ domain.format_duration(total_time), "exgreen" },
+		{ util.format_duration(total_time), "exgreen" },
 		{ "  •  ", "commentfg" },
 		{ today_date, "exyellow" },
 	})
@@ -118,14 +118,14 @@ function M.render(stats)
 	for i, session in ipairs(today_sessions) do
 		if session.start_time then
 			local time_str = session.start_time:sub(12, 16)
-			local duration_str = domain.format_duration(session.duration or 0)
+			local duration_str = util.format_duration(session.duration or 0)
 
 			if i == peak_index and #today_sessions > 1 then
 				duration_str = duration_str .. " ⭐"
 			end
 
-			local projects = domain.top_items(session.projects or {}, 2)
-			local languages = domain.top_items(session.languages or {}, 5)
+			local projects = util.top_items(session.projects or {}, 2)
+			local languages = util.top_items(session.languages or {}, 5)
 
 			tbl[#tbl + 1] = {
 				time_str,
@@ -138,7 +138,7 @@ function M.render(stats)
 				local icon = session.break_after < 1800 and "☕" or "🍽️"
 				tbl[#tbl + 1] = {
 					"",
-					icon .. " " .. domain.format_duration(session.break_after),
+					icon .. " " .. util.format_duration(session.break_after),
 					"-",
 					"",
 				}
@@ -154,14 +154,15 @@ function M.render(stats)
 	-- Time by Language
 	local languages = today.languages or {}
 	if #languages > 0 then
-		table.insert(lines, { { "  ⏰ Time by Language", "exgreen" } })
+		table.insert(lines, { { "  ⏰ Language activity", "exgreen" } })
 		table.insert(lines, {})
 
-		local tblLang = { { "Language", "Time" } }
+		local tblLang = { { "Language", "Time", "Lines" } }
 		for _, lang in ipairs(languages) do
 			table.insert(tblLang, {
 				lang.name,
-				domain.format_duration(lang.time),
+				util.format_duration(lang.time),
+				util.format_number(lang.lines),
 			})
 		end
 
@@ -174,7 +175,7 @@ function M.render(stats)
 	-- Quick Stats
 	table.insert(lines, {
 		{ "  📊 ", "exgreen" },
-		{ domain.format_duration(total_time), "exgreen" },
+		{ util.format_duration(total_time), "exgreen" },
 		{ " total  •  ", "commentfg" },
 		{ string.format("Focus %d%%", focus_score), focus_score >= 70 and "exgreen" or "exyellow" },
 	})

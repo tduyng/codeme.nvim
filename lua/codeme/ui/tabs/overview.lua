@@ -1,4 +1,4 @@
-local domain = require("codeme.domain")
+local util = require("codeme.util")
 local renderer = require("codeme.ui.renderer")
 
 local M = {}
@@ -48,7 +48,7 @@ function M.render(stats)
 	local focus_str = focus_score > 0 and tostring(focus_score) .. "/100" or "─"
 	local metrics_tbl = {
 		{ "⏰ Time", "📝 Lines", "🎯 Focus" },
-		{ domain.format_duration(today_time), domain.format_number(today_lines), focus_str },
+		{ util.format_duration(today_time), util.format_number(today_lines), focus_str },
 	}
 
 	for _, l in ipairs(renderer.table(metrics_tbl, 120)) do
@@ -72,7 +72,7 @@ function M.render(stats)
 			end
 			table.insert(time_goal_line, { string.format(" %d%%", time_pct), goal_hl })
 			table.insert(time_goal_line, {
-				string.format("  %s / %s", domain.format_duration(today_time), domain.format_duration(daily_goal_time)),
+				string.format("  %s / %s", util.format_duration(today_time), util.format_duration(daily_goal_time)),
 				"commentfg",
 			})
 			table.insert(lines, time_goal_line)
@@ -89,7 +89,7 @@ function M.render(stats)
 			end
 			table.insert(lines_goal_line, { string.format(" %d%%", lines_pct), lines_hl })
 			table.insert(lines_goal_line, {
-				string.format("  %s / %s", domain.format_number(today_lines), domain.format_number(daily_goal_lines)),
+				string.format("  %s / %s", util.format_number(today_lines), util.format_number(daily_goal_lines)),
 				"commentfg",
 			})
 			table.insert(lines, lines_goal_line)
@@ -107,9 +107,9 @@ function M.render(stats)
 			status_msg = "💪 Halfway there - keep the momentum"
 		elseif goal_pct > 0 then
 			local remaining = daily_goal_time - today_time
-			status_msg = "🚀 Great start - " .. domain.format_duration(remaining) .. " to go"
+			status_msg = "🚀 Great start - " .. util.format_duration(remaining) .. " to go"
 		else
-			status_msg = "💡 Goal: " .. domain.format_duration(daily_goal_time) .. " - Let's begin!"
+			status_msg = "💡 Goal: " .. util.format_duration(daily_goal_time) .. " - Let's begin!"
 		end
 
 		table.insert(lines, {})
@@ -207,8 +207,8 @@ function M.render(stats)
 		if yesterday_time == 0 then
 			table.insert(comparison_data, {
 				"vs Yesterday",
-				domain.format_duration(today_time),
-				domain.format_duration(0),
+				util.format_duration(today_time),
+				util.format_duration(0),
 				"↑ New",
 			})
 		else
@@ -217,8 +217,8 @@ function M.render(stats)
 			local status = diff >= 0 and "↑" or "↓"
 			table.insert(comparison_data, {
 				"vs Yesterday",
-				domain.format_duration(today_time),
-				domain.format_duration(yesterday_time),
+				util.format_duration(today_time),
+				util.format_duration(yesterday_time),
 				string.format("%s %d%%", status, diff_pct),
 			})
 		end
@@ -228,8 +228,8 @@ function M.render(stats)
 		if last_week_time == 0 then
 			table.insert(comparison_data, {
 				"vs Last Week",
-				domain.format_duration(week_time),
-				domain.format_duration(0),
+				util.format_duration(week_time),
+				util.format_duration(0),
 				"↑ New",
 			})
 		else
@@ -238,8 +238,8 @@ function M.render(stats)
 			local status = diff >= 0 and "↑" or "↓"
 			table.insert(comparison_data, {
 				"vs Last Week",
-				domain.format_duration(week_time),
-				domain.format_duration(last_week_time),
+				util.format_duration(week_time),
+				util.format_duration(last_week_time),
 				string.format("%s %d%%", status, diff_pct),
 			})
 		end

@@ -1,4 +1,4 @@
-local domain = require("codeme.domain")
+local util = require("codeme.util")
 local renderer = require("codeme.ui.renderer")
 
 local M = {}
@@ -42,8 +42,8 @@ function M.render(stats)
 			local it = items[i]
 			tbl[#tbl + 1] = {
 				it.name,
-				domain.format_duration(it.time),
-				domain.format_number(it.lines),
+				util.format_duration(it.time),
+				util.format_number(it.lines),
 				it.main_lang ~= "" and it.main_lang or "Mixed",
 			}
 		end
@@ -100,7 +100,7 @@ function M.render(stats)
 
 			tbl[#tbl + 1] = {
 				it.name,
-				domain.format_duration(it.time),
+				util.format_duration(it.time),
 				it.lines,
 				it.proficiency,
 			}

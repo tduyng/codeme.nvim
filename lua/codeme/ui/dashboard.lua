@@ -3,7 +3,7 @@ local M = {}
 local stats = require("codeme.stats")
 local renderer = require("codeme.ui.renderer")
 local backend = require("codeme.backend")
-local domain = require("codeme.domain")
+local util = require("codeme.util")
 
 -- Tab definitions
 local TABS = {
@@ -38,7 +38,7 @@ end
 ---@param stat_data table
 local function render_dashboard(stat_data)
 	-- Strip every vim.NIL from the backend payload once here.
-	stat_data = domain.sanitize(stat_data) or {}
+	stat_data = util.sanitize(stat_data) or {}
 
 	local buf = stats.get_buf()
 	local win = stats.get_win()

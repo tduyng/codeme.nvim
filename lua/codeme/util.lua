@@ -81,11 +81,11 @@ end
 ---@return string
 function M.format_date(date_str)
 	if not date_str then
-		return "Unknown"
+		return "_"
 	end
 	local year, month, day = date_str:match("(%d+)-(%d+)-(%d+)")
 	if not year then
-		return "Unknown"
+		return "_"
 	end
 
 	local timestamp = os.time({ year = year, month = month, day = day, hour = 12 })
