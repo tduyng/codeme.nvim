@@ -15,23 +15,66 @@ Zero config. 100% private. Auto-adapts to your colorscheme.
 ## Prerequisites
 
 codeme.nvim requires the [codeme binary](https://github.com/tduyng/codeme) (the backend) to be installed on your system.
-The plugin does not install it automatically, you need to set it up once before first use.
+The plugin does not install it automatically — you need to set it up once before first use.
 
-**Easiest way — download a prebuilt binary** (no Go or compiler needed):
+### Option 1: Homebrew (macOS / Linux)
 
-→ [GitHub Releases](https://github.com/tduyng/codeme/releases/latest)
+```bash
+brew install tduyng/tap/codeme
+```
 
-Pick the one for your platform, extract it, and put it somewhere on your `PATH`.
+Verify:
 
-**Or install with Go** (requires [Go 1.25+](https://go.dev/dl/) and a C compiler):
+```bash
+codeme stats
+```
+
+### Option 2: Go install
+
+Requires [Go 1.25+](https://go.dev/dl/):
 
 ```bash
 go install github.com/tduyng/codeme@latest
 ```
 
-> See the [codeme backend repo](https://github.com/tduyng/codeme) for full install options and details.
+Verify:
 
-After install, verify it works:
+```bash
+codeme stats
+```
+
+### Option 3: Download prebuilt binary
+
+No Go or compiler needed.
+
+1. Download the latest release for your platform:
+
+→ [GitHub Releases](https://github.com/tduyng/codeme/releases/latest)
+
+| Your OS        | Download this file                     |
+| -------------- | -------------------------------------- |
+| macOS (Apple)  | `codeme_<version>_darwin_arm64.tar.gz` |
+| macOS (Intel)  | `codeme_<version>_darwin_amd64.tar.gz` |
+| Linux (x86_64) | `codeme_<version>_linux_amd64.tar.gz`  |
+| Linux (ARM64)  | `codeme_<version>_linux_arm64.tar.gz`  |
+
+2. Extract the archive:
+
+```bash
+tar -xzf codeme_<version>_<platform>.tar.gz
+```
+
+3. Move the binary to your PATH:
+
+```bash
+# User local bin (recommended)
+mv codeme ~/.local/bin/codeme
+
+# Or system-wide (requires sudo)
+sudo mv codeme /usr/local/bin/codeme
+```
+
+4. Verify:
 
 ```bash
 codeme stats
