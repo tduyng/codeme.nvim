@@ -79,6 +79,12 @@ function M.render(stats)
 
 			table.insert(story_parts, { ".", "commentfg" })
 			table.insert(lines, story_parts)
+			table.insert(lines, {
+				{ "  📊 ", "exgreen" },
+				{ util.format_duration(total_time), "exgreen" },
+				{ " total  •  ", "commentfg" },
+				{ string.format("Focus %d%%", focus_score), focus_score >= 70 and "exgreen" or "exyellow" },
+			})
 			table.insert(lines, {})
 
 			local focus_insight = { { "  ", "commentfg" } }
@@ -171,15 +177,6 @@ function M.render(stats)
 		end
 		table.insert(lines, {})
 	end
-
-	-- Quick Stats
-	table.insert(lines, {
-		{ "  📊 ", "exgreen" },
-		{ util.format_duration(total_time), "exgreen" },
-		{ " total  •  ", "commentfg" },
-		{ string.format("Focus %d%%", focus_score), focus_score >= 70 and "exgreen" or "exyellow" },
-	})
-	table.insert(lines, {})
 
 	-- Peak Hours
 	local hourly_activity = {}
