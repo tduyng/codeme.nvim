@@ -50,13 +50,6 @@ jobs:
           git push origin v$VERSION
           echo "✓ Release v$VERSION created and pushed"
 
-      - name: Generate release notes
-        id: changelog
-        run: |
-          VERSION="${{ github.event.inputs.version }}"
-          git cliff --latest --strip all --output RELEASE_NOTES.md
-          echo "Generated release notes for v$VERSION"
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
