@@ -79,14 +79,16 @@ function M.render(stats)
 		local total_lang_time = 0
 
 		for _, lang in pairs(langs) do
-			total_lang_time = total_lang_time + (lang.time or 0)
-			table.insert(lang_items, {
-				name = lang.name,
-				time = lang.time or 0,
-				lines = lang.lines or 0,
-				proficiency = lang.proficiency or "Beginner",
-				hours_total = lang.hours_total or 0,
-			})
+			if lang.is_code then
+				total_lang_time = total_lang_time + (lang.time or 0)
+				table.insert(lang_items, {
+					name = lang.name,
+					time = lang.time or 0,
+					lines = lang.lines or 0,
+					proficiency = lang.proficiency or "Beginner",
+					hours_total = lang.hours_total or 0,
+				})
+			end
 		end
 
 		table.sort(lang_items, function(a, b)
