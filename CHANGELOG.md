@@ -1,3 +1,15 @@
+## [0.0.4](https://github.com/tduyng/codeme.nvim/compare/v0.0.3..v0.0.4) - 2026-02-19
+
+### Bug Fixes
+
+- *(work)* Show only programming languages, not filetype - ([d4b8b95](https://github.com/tduyng/codeme.nvim/commit/d4b8b9507690b43ecb34039ccdf8cfe7af7f67d5))
+
+### Miscellaneous Tasks
+
+- *(activity)* Rename Languages to FileType - ([28cea08](https://github.com/tduyng/codeme.nvim/commit/28cea0874ebc29e1353d9d072640b652942743d3))
+- *(activity)* Show total time and focus percentage in top of dashboard - ([d7ddff6](https://github.com/tduyng/codeme.nvim/commit/d7ddff60cd800a93ff741ce5fc90f72b565cacb4))
+- Simple release notes - ([f5bdef7](https://github.com/tduyng/codeme.nvim/commit/f5bdef7d633e59863e6e423a18b996ed435e1952))
+- Make installation backend more clear - ([9c1e248](https://github.com/tduyng/codeme.nvim/commit/9c1e2488d26d277fb184981aacf49cc46211e855))
 ## [0.0.3](https://github.com/tduyng/codeme.nvim/compare/v0.0.2..v0.0.3) - 2026-02-15
 
 ### Miscellaneous Tasks
