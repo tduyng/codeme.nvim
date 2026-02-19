@@ -134,11 +134,7 @@ vim.keymap.set("n", "<leader>cm", "<cmd>CodeMe<cr>")
 | 📁 **Work**      | Projects and languages breakdown         |
 | 🏆 **Records**   | Personal bests, achievements, milestones |
 
-![Today](./docs/img/today.png)
-
 ![Languages](./docs/img/languages.png)
-
-![Projects](./docs/img/projects.png)
 
 ## Achievements
 

@@ -119,7 +119,7 @@ function M.render(stats)
 		end
 	end
 
-	local tbl = { { "Time", "Duration", "Projects", "Languages" } }
+	local tbl = { { "Time", "Duration", "Projects", "FileType" } }
 
 	for i, session in ipairs(today_sessions) do
 		if session.start_time then
@@ -160,10 +160,10 @@ function M.render(stats)
 	-- Time by Language
 	local languages = today.languages or {}
 	if #languages > 0 then
-		table.insert(lines, { { "  ⏰ Language activity", "exgreen" } })
+		table.insert(lines, { { "  ⏰ FileType activity", "exgreen" } })
 		table.insert(lines, {})
 
-		local tblLang = { { "Language", "Time", "Lines" } }
+		local tblLang = { { "FileType", "Time", "Lines" } }
 		for _, lang in ipairs(languages) do
 			table.insert(tblLang, {
 				lang.name,
