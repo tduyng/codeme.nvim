@@ -9,8 +9,8 @@ local _state = {
 	buf = nil,
 }
 
--- Cache TTL (5 minutes)
-local CACHE_TTL = 300
+-- Cache TTL (in seconds)
+local CACHE_TTL = 5
 
 ---Get cached stats or nil if expired
 ---@return table|nil
