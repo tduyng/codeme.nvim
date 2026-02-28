@@ -47,7 +47,7 @@ local function count_week_coding_days(daily_activity)
 	return days_coded
 end
 
-function M.render(stats)
+function M.render(stats, width, height)
 	local lines = {}
 
 	local this_week = stats.this_week or {}
@@ -60,63 +60,24 @@ function M.render(stats)
 
 	local t_trend, t_hl = util.get_trend(week_time, last_week_time)
 
-	-- Header
+	-- Header Summary Card
 	table.insert(lines, {})
-	table.insert(lines, {
-		{ "  📅 Weekly Summary  ", "exgreen" },
-		{ "⏱️  ", "commentfg" },
-		{ util.format_duration(week_time), "exgreen" },
-		{ t_trend, t_hl },
-		{ "  │  📝 ", "commentfg" },
-		{ util.format_number(week_lines), "exyellow" },
-	})
-	table.insert(lines, {})
-
-	-- Daily Breakdown
-	local week_monday, _, today = get_week_boundaries()
-
-	table.insert(lines, { { "  📊 Daily Breakdown (Mon-Sun)", "exgreen" } })
-	table.insert(lines, {})
-
-	local day_names = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" }
-	local tbl = { { "Day", "Date", "Time", "Lines", "Sessions", "Trend" } }
-
-	local mpd = this_week.most_productive_day or {}
-	local hdo = this_week.highest_daily_output or {}
-	local mpd_date = mpd.date
-	local hdo_date = hdo.date
-
-	for i = 1, 7 do
-		local date = get_weekday_date(i, week_monday)
-		local stat = daily_activity[date] or {}
-
-		local t = stat.time or 0
-		local l = stat.lines or 0
-		local s = stat.session_count or 0
-
-		local label = day_names[i]:sub(1, 3)
-		if (mpd_date and date == mpd_date) or (hdo_date and date == hdo_date) then
-			label = label .. " 🔥"
-		end
-		if date == today then
-			label = label .. " ★"
-		end
-
-		if date > today then
-			tbl[#tbl + 1] = { label, date:sub(6, 10), "-", "-", "-", "-" }
-		else
-			tbl[#tbl + 1] = {
-				label,
-				date:sub(6, 10),
-				t > 0 and util.format_duration(t) or "-",
-				l > 0 and util.format_number(l) or "-",
-				s > 0 and tostring(s) or "-",
-				t > 0 and "↗" or "-",
-			}
-		end
-	end
-
-	for _, l in ipairs(renderer.table(tbl, 120)) do
+	local summary_lines = {
+		{
+			{ "Current Week: ", "commentfg" },
+			{ util.format_duration(week_time), "exgreen" },
+			{ t_trend, t_hl },
+			{ " • ", "commentfg" },
+			{ util.format_number(week_lines) .. " lines", "exyellow" },
+		},
+		{
+			{ "Avg per Day:  ", "commentfg" },
+			{ util.format_duration(week_time / 7), "normal" },
+			{ " • ", "commentfg" },
+			{ string.format("%d/7 days active", count_week_coding_days(daily_activity)), "exblue" },
+		},
+	}
+	for _, l in ipairs(renderer.card("Weekly Performance", summary_lines, width - 10, "exgreen")) do
 		table.insert(lines, l)
 	end
 	table.insert(lines, {})
@@ -124,7 +85,7 @@ function M.render(stats)
 	-- 12 weeks activity heatmap
 	local hm = stats.weekly_heatmap
 	if hm and #hm > 0 then
-		table.insert(lines, { { "  📅 Activity Heatmap", "exgreen" } })
+		table.insert(lines, { { "  📅 Long-term Heatmap", "exgreen" } })
 		table.insert(lines, {})
 		for _, l in ipairs(renderer.heatmap(hm)) do
 			table.insert(lines, l)
@@ -132,32 +93,48 @@ function M.render(stats)
 		table.insert(lines, {})
 	end
 
-	-- Week Summary
-	table.insert(lines, { { "  📌 Week Summary", "exgreen" } })
+	-- Daily Breakdown Table
+	local week_monday, _, today = get_week_boundaries()
+	table.insert(lines, { { "  📊 Daily Breakdown", "exgreen" } })
 	table.insert(lines, {})
 
-	local daily_avg = week_time > 0 and math.floor(week_time / 7) or 0
-	table.insert(lines, {
-		{ "     Daily Average: ", "commentfg" },
-		{ util.format_duration(daily_avg), "exgreen" },
-	})
+	local day_names = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" }
+	local tbl = { { "Day", "Date", "Time", "Lines", "Sessions", "Trend" } }
 
-	local days_coded = count_week_coding_days(daily_activity)
-	table.insert(lines, {
-		{ "     Coding Days: ", "commentfg" },
-		{ string.format("%d/7", days_coded), "exgreen" },
-	})
+	local mpd = this_week.most_productive_day or {}
+	local mpd_date = mpd.date
 
-	if last_week_time > 0 then
-		local diff = week_time - last_week_time
-		local arrow = diff > 0 and "↑" or diff < 0 and "↓" or "→"
-		local hl = diff > 0 and "exgreen" or diff < 0 and "exred" or "commentfg"
-		table.insert(lines, {
-			{ "     Vs Last Week: ", "commentfg" },
-			{ arrow, hl },
-			{ " " .. util.format_duration(math.abs(diff)), hl },
-		})
+	for i = 1, 7 do
+		local date = get_weekday_date(i, week_monday)
+		local stat = daily_activity[date] or {}
+		local label = day_names[i]:sub(1, 3)
+		if date == mpd_date then
+			label = label .. " 🔥"
+		end
+		if date == today then
+			label = label .. " ★"
+		end
+
+		if date > today then
+			table.insert(tbl, { label, date:sub(6, 10), "-", "-", "-", "-" })
+		else
+			table.insert(tbl, {
+				label,
+				date:sub(6, 10),
+				(stat.time or 0) > 0 and util.format_duration(stat.time) or "-",
+				(stat.lines or 0) > 0 and util.format_number(stat.lines) or "-",
+				(stat.session_count or 0) > 0 and tostring(stat.session_count) or "-",
+				(stat.time or 0) > 0 and "↗" or "─",
+			})
+		end
 	end
+
+	for _, l in ipairs(renderer.table(tbl, width - 10)) do
+		table.insert(lines, l)
+	end
+	table.insert(lines, {})
+
+	-- Weekday vs Weekend Split
 	local weekday_time, weekend_time = 0, 0
 	for i = 1, 7 do
 		local d = daily_activity[get_weekday_date(i, week_monday)]
@@ -176,22 +153,22 @@ function M.render(stats)
 		local weekend_pct = 100 - weekday_pct
 
 		local wd_line = { { "  🏢 Weekday  ", "commentfg" } }
-		for _, seg in ipairs(renderer.progress(weekday_pct, 20, "exgreen")) do
+		for _, seg in ipairs(renderer.progress(weekday_pct, 30, "exgreen")) do
 			table.insert(wd_line, seg)
 		end
 		table.insert(wd_line, { " " .. weekday_pct .. "%", "exgreen" })
 		table.insert(lines, wd_line)
 
-		local we_hl = weekend_pct >= 20 and "exgreen" or "exyellow"
 		local we_line = { { "  🏖️ Weekend  ", "commentfg" } }
-		for _, seg in ipairs(renderer.progress(weekend_pct, 20, we_hl)) do
+		for _, seg in ipairs(renderer.progress(weekend_pct, 30, "exyellow")) do
 			table.insert(we_line, seg)
 		end
-		table.insert(we_line, { " " .. weekend_pct .. "%", we_hl })
+		table.insert(we_line, { " " .. weekend_pct .. "%", "exyellow" })
 		table.insert(lines, we_line)
+		table.insert(lines, {})
 	end
 
-	-- Work Style (shared with Insights)
+	-- Work Style Insight (Restored)
 	local hourly = stats.all_time and stats.all_time.hourly_activity or {}
 	if hourly and #hourly > 0 then
 		local max_time, best_hour = 0, nil
@@ -210,13 +187,20 @@ function M.render(stats)
 				style, icon, period = "Early Bird", "🌅", "mornings"
 			elseif best_hour >= 12 and best_hour < 18 then
 				style, icon, period = "Day Coder", "☀️", "afternoons"
-			elseif best_hour >= 18 then
+			elseif best_hour >= 18 and best_hour < 22 then
 				style, icon, period = "Night Owl", "🦉", "evenings"
 			else
 				style, icon, period = "Midnight Hacker", "🌙", "late nights"
 			end
 			local peak = string.format("%02d:00-%02d:00", best_hour, (best_hour + 1) % 24)
-			table.insert(lines, { { "  " .. icon .. " " .. style .. " " .. peak .. " (" .. period .. ")", "exgreen" } })
+			table.insert(lines, {
+				{ "  💡 ", "exyellow" },
+				{ "You're a ", "commentfg" },
+				{ style .. " " .. icon, "exgreen" },
+				{ ". Most productive at ", "commentfg" },
+				{ peak, "normal" },
+				{ " (" .. period .. ").", "commentfg" },
+			})
 		end
 	end
 

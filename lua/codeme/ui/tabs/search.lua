@@ -84,139 +84,75 @@ function M.on_enter(refresh_fn)
 	end
 end
 
-function M.render(stats)
+function M.render(stats, width, height)
 	local lines = {}
 
-	-- Header / Search Control
+	-- Stylized Date Header
 	table.insert(lines, {})
-	table.insert(lines, {
-		{ "  🔍 Search Day:  ", "exgreen" },
-		{ " [ ", "commentfg" },
+	local header_content = {
+		{ "  [ ", "commentfg" },
 		{ "←", "exyellow" },
 		{ " ] ", "commentfg" },
-		{ "  " .. state.date .. "  ", "normal" },
-		{ " [ ", "commentfg" },
+		{ "  " .. os.date("%A, %B %d, %Y", util.parse_iso_date(state.date .. "T12:00:00") or os.time()), "exgreen" },
+		{ "  [ ", "commentfg" },
 		{ "→", "exyellow" },
 		{ " ] ", "commentfg" },
-		{ "    ( [ ] to navigate, / to type, Enter to refresh )", "commentfg" },
-	})
+	}
+	table.insert(lines, header_content)
+	table.insert(lines, { { "    " .. state.date .. "  (Press / to jump, [ ] to navigate)", "commentfg" } })
 	table.insert(lines, {})
 
 	if state.loading then
-		table.insert(lines, { { "  Loading stats for " .. state.date .. "...", "exyellow" } })
+		table.insert(lines, { { "  ⌛ Loading historic data...", "exyellow" } })
 		table.insert(lines, {})
 		return lines
 	end
 
 	if state.error then
-		table.insert(lines, { { "  Error: " .. state.error, "exred" } })
+		table.insert(lines, { { "  ❌ Error: " .. state.error, "exred" } })
 		table.insert(lines, {})
 		return lines
 	end
 
 	local data = state.data
 	if not data or data.is_empty then
-		table.insert(lines, { { "  No activity recorded on " .. state.date, "commentfg" } })
+		table.insert(lines, { { "  No records found for this date.", "commentfg" } })
 		table.insert(lines, {})
 		return lines
 	end
 
-	-- Day Summary
+	-- Summary Card
 	local total_time = data.total_time or 0
 	local focus_score = data.focus_score or 0
 
-	table.insert(lines, {
-		{ "  📊 Summary", "exgreen" },
-		{ string.rep(" ", 38), "normal" },
-		{ util.format_duration(total_time), "exgreen" },
-		{ " total  •  ", "commentfg" },
-		{ string.format("Focus %d%%", focus_score), focus_score >= 70 and "exgreen" or "exyellow" },
-	})
-
-	local summary_parts = {
-		{ "  Main: ", "commentfg" },
-		{ data.main_project or "-", "exblue" },
-		{ " (", "commentfg" },
-		{ data.main_language or "-", "excyan" },
-		{ ")", "commentfg" },
+	local summary_lines = {
+		{ { "Total Time:  ", "commentfg" }, { util.format_duration(total_time), "exgreen" } },
+		{ { "Focus Score: ", "commentfg" }, { focus_score .. "%", focus_score >= 70 and "exgreen" or "exyellow" } },
+		{ { "Lines:       ", "commentfg" }, { util.format_number(data.total_lines or 0), "normal" } },
 	}
-	if data.start_time then
-		table.insert(summary_parts, { "  •  Time: ", "commentfg" })
-		table.insert(summary_parts, { data.start_time .. " → " .. (data.end_time or "??:??"), "normal" })
+	local summary_card = renderer.card("Daily Overview", summary_lines, 40, "exgreen")
+
+	-- Identity Card
+	local identity_lines = {
+		{ { "Main Project:  ", "commentfg" }, { data.main_project or "-", "exblue" } },
+		{ { "Main Language: ", "commentfg" }, { data.main_language or "-", "excyan" } },
+		{ { "Active Hours:  ", "commentfg" }, { (data.start_time or "??") .. " to " .. (data.end_time or "??"), "normal" } },
+	}
+	local identity_card = renderer.card("Project Identity", identity_lines, 45, "exblue")
+
+	if width >= 100 then
+		for _, l in ipairs(renderer.hbox(summary_card, identity_card, 4)) do
+			table.insert(lines, l)
+		end
+	else
+		for _, l in ipairs(summary_card) do
+			table.insert(lines, l)
+		end
+		for _, l in ipairs(identity_card) do
+			table.insert(lines, l)
+		end
 	end
-	table.insert(lines, summary_parts)
 	table.insert(lines, {})
-
-	-- Session Timeline
-	local sessions = data.sessions or {}
-	if #sessions > 0 then
-		table.insert(lines, { { "  ⏰ Session Timeline", "exgreen" } })
-		table.insert(lines, {})
-
-		local tbl = { { "Time", "Duration", "Projects", "Languages" } }
-		local max_duration = 0
-		for _, s in ipairs(sessions) do
-			max_duration = math.max(max_duration, s.duration or 0)
-		end
-
-		for _, s in ipairs(sessions) do
-			local time_str = s.start_time or "??:??"
-			local dur_str = util.format_duration(s.duration or 0)
-			local projs = util.top_items(s.projects or {}, 2)
-			local langs = util.top_items(s.languages or {}, 3)
-
-			table.insert(tbl, {
-				time_str,
-				dur_str,
-				projs ~= "" and projs or "-",
-				langs ~= "" and langs or "-",
-			})
-		end
-
-		for _, l in ipairs(renderer.table(tbl, 120)) do
-			table.insert(lines, l)
-		end
-		table.insert(lines, {})
-	end
-
-	-- Languages & Projects
-	local langs = data.languages or {}
-	if #langs > 0 then
-		table.insert(lines, { { "  🔤 Languages", "exgreen" } })
-		table.insert(lines, {})
-		local tblLang = { { "Language", "Time", "Lines", "Pct" } }
-		for _, l in ipairs(langs) do
-			table.insert(tblLang, {
-				l.name,
-				util.format_duration(l.time),
-				util.format_number(l.lines),
-				string.format("%.1f%%", l.percent_total or 0),
-			})
-		end
-		for _, l in ipairs(renderer.table(tblLang, 120)) do
-			table.insert(lines, l)
-		end
-		table.insert(lines, {})
-	end
-
-	local projs = data.projects or {}
-	if #projs > 0 then
-		table.insert(lines, { { "  📁 Projects", "exgreen" } })
-		table.insert(lines, {})
-		local tblProj = { { "Project", "Time", "Lines", "Main Language" } }
-		for _, p in ipairs(projs) do
-			table.insert(tblProj, {
-				p.name,
-				util.format_duration(p.time),
-				util.format_number(p.lines),
-				p.main_lang or "-",
-			})
-		end
-		for _, l in ipairs(renderer.table(tblProj, 120)) do
-			table.insert(lines, l)
-		end
-		table.insert(lines, {})
-	end
 
 	-- Hourly activity
 	local hourly = data.hourly_activity or {}
@@ -229,45 +165,30 @@ function M.render(stats)
 	end
 
 	if has_hourly then
-		table.insert(lines, { { "  ⏰ Hourly Activity", "exgreen" } })
+		table.insert(lines, { { "  ⏰ Hourly Distribution", "exgreen" } })
 		table.insert(lines, {})
-
-		local max_h = 0
-		for _, v in ipairs(hourly) do
-			max_h = math.max(max_h, v)
+		local hist_line = { { "  ", "normal" } }
+		local hist_segs = renderer.histogram(hourly, 0, 1, "exblue")
+		for _, s in ipairs(hist_segs) do
+			table.insert(hist_line, s)
 		end
+		table.insert(lines, hist_line)
+		table.insert(lines, { { "  00  02  04  06  08  10  12  14  16  18  20  22", "commentfg" } })
+		table.insert(lines, {})
+	end
 
-		local line_h = { { "  ", "normal" } }
-		for i = 0, 23 do
-			local val = hourly[i + 1] or 0
-			local pct = max_h > 0 and (val / max_h * 100) or 0
-			local char = "░"
-			local hl = "commentfg"
-			if pct > 75 then
-				char = "█"
-				hl = "exyellow"
-			elseif pct > 50 then
-				char = "█"
-				hl = "exgreen"
-			elseif pct > 25 then
-				char = "▓"
-				hl = "excyan"
-			elseif pct > 0 then
-				char = "▒"
-				hl = "exblue"
-			end
-			table.insert(line_h, { char .. " ", hl })
+	-- Sessions & Files
+	local sessions = data.sessions or {}
+	if #sessions > 0 then
+		table.insert(lines, { { "  ⏰ Session Timeline", "exgreen" } })
+		table.insert(lines, {})
+		local tbl = { { "Time", "Duration", "Projects" } }
+		for _, s in ipairs(sessions) do
+			table.insert(tbl, { s.start_time or "??", util.format_duration(s.duration or 0), util.top_items(s.projects or {}, 2) })
 		end
-		table.insert(lines, line_h)
-
-		local labels = { { "  ", "normal" } }
-		for i = 0, 23, 4 do
-			table.insert(labels, { string.format("%02d  ", i), "commentfg" })
-			if i < 20 then
-				table.insert(labels, { string.rep(" ", 6), "normal" })
-			end
+		for _, l in ipairs(renderer.table(tbl, width - 10)) do
+			table.insert(lines, l)
 		end
-		table.insert(lines, labels)
 		table.insert(lines, {})
 	end
 
@@ -276,24 +197,13 @@ function M.render(stats)
 	if #files > 0 then
 		table.insert(lines, { { "  📄 Top Files", "exgreen" } })
 		table.insert(lines, {})
-		local tblFile = { { "File", "Language", "Time", "Lines" } }
+		local tblFile = { { "File", "Lang", "Time" } }
 		for _, f in ipairs(files) do
-			table.insert(tblFile, {
-				f.file,
-				f.language or "-",
-				util.format_duration(f.time),
-				util.format_number(f.lines),
-			})
+			table.insert(tblFile, { f.file, f.language or "-", util.format_duration(f.time) })
 		end
-		for _, l in ipairs(renderer.table(tblFile, 120)) do
+		for _, l in ipairs(renderer.table(tblFile, width - 10)) do
 			table.insert(lines, l)
 		end
-		table.insert(lines, {})
-	end
-
-	-- Notice for old dates
-	if #sessions == 0 and total_time > 0 then
-		table.insert(lines, { { "  ℹ️  Session details unavailable for dates older than 365 days.", "exyellow" } })
 		table.insert(lines, {})
 	end
 

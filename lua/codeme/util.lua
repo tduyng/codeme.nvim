@@ -22,6 +22,15 @@ function M.format_duration(seconds)
 	end
 end
 
+---Pad string to width (unicode-aware)
+---@param s string
+---@param w number
+---@return string
+function M.pad(s, w)
+	local diff = w - vim.api.nvim_strwidth(s or "")
+	return (s or "") .. (diff > 0 and string.rep(" ", diff) or "")
+end
+
 ---Format number with commas
 ---@param n number
 ---@return string
@@ -181,6 +190,26 @@ function M.sanitize(value)
 		return value
 	end
 
+	-- Check if this is an array or a dictionary
+	local is_array = true
+	local count = 0
+	for k, _ in pairs(value) do
+		count = count + 1
+		if type(k) ~= "number" then
+			is_array = false
+			break
+		end
+	end
+
+	if is_array and count > 0 then
+		local out = {}
+		for i = 1, count do
+			out[i] = M.sanitize(value[i])
+		end
+		return out
+	end
+
+	-- It's a dictionary
 	local out = {}
 	for k, v in pairs(value) do
 		local sk = M.sanitize(k)

@@ -27,6 +27,12 @@ function M.get_stats()
 	return _state.stats
 end
 
+---Get cached stats regardless of TTL (for UI persistence)
+---@return table|nil
+function M.get_stats_persistent()
+	return _state.stats
+end
+
 ---Set stats cache
 ---@param stats table
 function M.set_stats(stats)

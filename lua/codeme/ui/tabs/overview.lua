@@ -3,7 +3,7 @@ local renderer = require("codeme.ui.renderer")
 
 local M = {}
 
-function M.render(stats)
+function M.render(stats, width, height)
 	local lines = {}
 	local today = stats.today or {}
 	local today_time = today.total_time or 0
@@ -44,14 +44,18 @@ function M.render(stats)
 	})
 	table.insert(lines, {})
 
-	-- Quick metrics table
-	local focus_str = focus_score > 0 and tostring(focus_score) .. "/100" or "─"
-	local metrics_tbl = {
-		{ "⏰ Time", "📝 Lines", "🎯 Focus" },
-		{ util.format_duration(today_time), util.format_number(today_lines), focus_str },
-	}
-
-	for _, l in ipairs(renderer.table(metrics_tbl, 120)) do
+	-- Metric Pills (New)
+	local pills = renderer.metric_pills({
+		{ icon = "⏰", label = "Time", value = util.format_duration(today_time), color = "exgreen" },
+		{ icon = "📝", label = "Lines", value = util.format_number(today_lines), color = "exyellow" },
+		{
+			icon = "🎯",
+			label = "Focus",
+			value = focus_score > 0 and (tostring(focus_score) .. "%") or "─",
+			color = focus_score >= 70 and "exgreen" or "exyellow",
+		},
+	})
+	for _, l in ipairs(pills) do
 		table.insert(lines, l)
 	end
 	table.insert(lines, {})
@@ -67,7 +71,7 @@ function M.render(stats)
 			local goal_hl = time_pct >= 100 and "exgreen" or time_pct >= 75 and "exyellow" or "exblue"
 
 			local time_goal_line = { { "  ⏰ ", "commentfg" } }
-			for _, seg in ipairs(renderer.progress(display_pct, 25, goal_hl)) do
+			for _, seg in ipairs(renderer.progress(display_pct, 30, goal_hl)) do
 				table.insert(time_goal_line, seg)
 			end
 			table.insert(time_goal_line, { string.format(" %d%%", time_pct), goal_hl })
@@ -84,7 +88,7 @@ function M.render(stats)
 			local lines_hl = lines_pct >= 100 and "exgreen" or lines_pct >= 75 and "exyellow" or "exblue"
 
 			local lines_goal_line = { { "  📝 ", "commentfg" } }
-			for _, seg in ipairs(renderer.progress(display_pct, 25, lines_hl)) do
+			for _, seg in ipairs(renderer.progress(display_pct, 30, lines_hl)) do
 				table.insert(lines_goal_line, seg)
 			end
 			table.insert(lines_goal_line, { string.format(" %d%%", lines_pct), lines_hl })
@@ -112,48 +116,20 @@ function M.render(stats)
 			status_msg = "💡 Goal: " .. util.format_duration(daily_goal_time) .. " - Let's begin!"
 		end
 
-		table.insert(lines, {})
 		table.insert(lines, { { "  ", "commentfg" }, { status_msg, goal_hl } })
 		table.insert(lines, {})
 	end
 
-	-- Streak visualization
-	table.insert(lines, { { "  🔥 Streak Power", "exgreen" } })
+	-- Streak & Week Volume
+	table.insert(lines, { { "  📈 Performance Shape", "exgreen" } })
 	table.insert(lines, {})
 
 	local streak_info = stats.streak_info or {}
 	local current_streak = streak_info.current or 0
 	local longest_streak = streak_info.longest or 0
-	local flame_display, streak_hl
 
-	if current_streak >= 30 then
-		flame_display, streak_hl = "🔥🔥🔥🔥🔥", "exgreen"
-	elseif current_streak >= 21 then
-		flame_display, streak_hl = "🔥🔥🔥🔥", "exgreen"
-	elseif current_streak >= 14 then
-		flame_display, streak_hl = "🔥🔥🔥", "exgreen"
-	elseif current_streak >= 7 then
-		flame_display, streak_hl = "🔥🔥", "exyellow"
-	elseif current_streak > 0 then
-		flame_display, streak_hl = "🔥", "exyellow"
-	else
-		flame_display, streak_hl = "💤", "commentfg"
-	end
-
-	table.insert(lines, {
-		{ "  " .. flame_display .. "  ", "normal" },
-		{ string.format("%d DAY%s", current_streak, current_streak == 1 and "" or "S"), streak_hl },
-		{
-			longest_streak > current_streak and string.format("  •  Record: %d days", longest_streak)
-				or (current_streak > 0 and "  •  NEW RECORD!" or ""),
-			"commentfg",
-		},
-	})
-	table.insert(lines, {})
-
-	-- Week pattern
 	local daily_activity = stats.daily_activity or {}
-	local days_with_activity = {}
+	local week_data = {}
 	local now = os.date("*t")
 	local iso_wday = now.wday == 1 and 7 or now.wday - 1
 	local monday_time = os.time({
@@ -165,34 +141,52 @@ function M.render(stats)
 		sec = 0,
 	})
 
+	local max_week_time = 0
 	for i = 0, 6 do
 		local day_time = monday_time + i * 86400
 		local day_date = os.date("%Y-%m-%d", day_time)
-		local entry = daily_activity[day_date]
-		local has_activity = entry ~= nil and entry.time and entry.time > 0
+		local entry = daily_activity[day_date] or {}
+		local t = (entry.time or 0)
 		if day_time > os.time() then
-			has_activity = false
+			t = 0
 		end
-		days_with_activity[#days_with_activity + 1] = has_activity
+		week_data[i + 1] = t
+		if t > max_week_time then
+			max_week_time = t
+		end
 	end
 
-	local pattern_line = { { "  This week:  ", "commentfg" } }
-	for i = 1, 7 do
-		local char = days_with_activity[i] and "●" or "○"
-		local hl = days_with_activity[i] and "exgreen" or "commentfg"
-		table.insert(pattern_line, { char .. " ", hl })
+	local vol_line = { { "  Week Volume: ", "commentfg" } }
+	local hist = renderer.histogram(week_data, max_week_time, 1, "exgreen")
+	for _, s in ipairs(hist) do
+		table.insert(vol_line, s)
 	end
-	table.insert(lines, pattern_line)
+	table.insert(lines, vol_line)
 
-	local label_line = { { "              ", "commentfg" } }
+	local label_line = { { "                ", "commentfg" } }
 	for _, label in ipairs({ "M", "T", "W", "T", "F", "S", "S" }) do
 		table.insert(label_line, { label .. " ", "commentfg" })
 	end
 	table.insert(lines, label_line)
 	table.insert(lines, {})
 
+	-- Streak visualization (Restored prominence)
+	local flame_display
+	if current_streak >= 30 then flame_display = "🔥🔥🔥🔥🔥"
+	elseif current_streak >= 14 then flame_display = "🔥🔥🔥"
+	elseif current_streak >= 7 then flame_display = "🔥🔥"
+	elseif current_streak > 0 then flame_display = "🔥"
+	else flame_display = "💤" end
+
+	table.insert(lines, {
+		{ "  " .. flame_display .. "  ", "normal" },
+		{ string.format("%d DAY STREAK", current_streak), "exyellow" },
+		{ longest_streak > current_streak and string.format("  •  Best: %d days", longest_streak) or "  •  NEW RECORD!", "commentfg" },
+	})
+	table.insert(lines, {})
+
 	-- Performance comparison
-	table.insert(lines, { { "  📊 Performance", "exgreen" } })
+	table.insert(lines, { { "  📊 Comparisons", "exgreen" } })
 	table.insert(lines, {})
 
 	local yesterday = stats.yesterday or {}
@@ -250,7 +244,7 @@ function M.render(stats)
 		for _, comp in ipairs(comparison_data) do
 			table.insert(comp_tbl, comp)
 		end
-		for _, l in ipairs(renderer.table(comp_tbl, 120)) do
+		for _, l in ipairs(renderer.table(comp_tbl, width - 10)) do
 			table.insert(lines, l)
 		end
 		table.insert(lines, {})
