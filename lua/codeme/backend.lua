@@ -88,6 +88,51 @@ function M.get_stats(today_only, callback)
 	end)
 end
 
+---Get system timezone name
+---@return string?
+local function get_timezone()
+	-- Try to get from TZ environment variable
+	local tz = os.getenv("TZ")
+	if tz and tz ~= "" then
+		return tz
+	end
+
+	-- Try to read from /etc/timezone (common on Linux)
+	local f = io.open("/etc/timezone", "r")
+	if f then
+		tz = f:read("*l")
+		f:close()
+		if tz and tz ~= "" then
+			return tz
+		end
+	end
+
+	-- Try to use system call to get timezone abbreviation (not perfect, but better than nothing)
+	-- Go's time.LoadLocation handles "Local" or specific names
+	return nil
+end
+
+---Get stats for a specific day from backend
+---@param date string Date in YYYY-MM-DD format
+---@param callback fun(stats: table)
+function M.get_day_stats(date, callback)
+	local args = { "day", "--date", date, "--compact" }
+	local tz = get_timezone()
+	if tz then
+		table.insert(args, "--tz")
+		table.insert(args, tz)
+	end
+
+	exec_async(args, function(success, data, err)
+		if not success then
+			vim.notify("CodeMe: " .. (err or "Unknown error"), vim.log.levels.ERROR)
+			callback({ is_empty = true, date = date })
+			return
+		end
+		callback(data or { is_empty = true, date = date })
+	end)
+end
+
 ---Send heartbeat to backend
 ---@param opts table Heartbeat options
 ---@param callback fun(success: boolean)?

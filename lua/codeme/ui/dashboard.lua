@@ -12,6 +12,7 @@ local TABS = {
 	"📅 Weekly",
 	"📁 Work",
 	"🏆 Records",
+	"🔍 Search",
 }
 
 -- Tab modules
@@ -21,6 +22,7 @@ local tab_modules = {
 	require("codeme.ui.tabs.weekly"),
 	require("codeme.ui.tabs.work"),
 	require("codeme.ui.tabs.records"),
+	require("codeme.ui.tabs.search"),
 }
 
 ---Render current tab content
@@ -47,6 +49,15 @@ local function render_dashboard(stat_data)
 		return
 	end
 
+	local current_tab = stats.get_active_tab()
+
+	-- Call on_enter for search tab
+	if current_tab == 6 and tab_modules[6].on_enter then
+		tab_modules[6].on_enter(function()
+			render_dashboard(stat_data)
+		end)
+	end
+
 	local width = vim.api.nvim_win_get_width(win)
 	local ns = vim.api.nvim_create_namespace("codeme_dashboard")
 
@@ -66,6 +77,9 @@ local function render_dashboard(stat_data)
 	-- Footer
 	table.insert(lines, {})
 	table.insert(lines, { { "  <Tab>: Next │ <S-Tab>: Prev │ 1-6: Jump │ q: Close", "commentfg" } })
+	if current_tab == 6 then
+		table.insert(lines, { { "  [ / ]: Navigate Day │ /: Type Date │ Enter: Refresh", "exyellow" } })
+	end
 
 	renderer.render(buf, lines, ns, width)
 end
@@ -126,6 +140,33 @@ function M.show_window(stat_data)
 	end, opts)
 	vim.keymap.set("n", "H", function()
 		M.prev_tab()
+	end, opts)
+
+	-- Search tab specific keymaps
+	local function refresh()
+		local data = stats.get_stats() or {}
+		render_dashboard(data)
+	end
+
+	vim.keymap.set("n", "[", function()
+		if stats.get_active_tab() == 6 then
+			tab_modules[6].on_key("[", refresh)
+		end
+	end, opts)
+	vim.keymap.set("n", "]", function()
+		if stats.get_active_tab() == 6 then
+			tab_modules[6].on_key("]", refresh)
+		end
+	end, opts)
+	vim.keymap.set("n", "<CR>", function()
+		if stats.get_active_tab() == 6 then
+			tab_modules[6].on_key("<CR>", refresh)
+		end
+	end, opts)
+	vim.keymap.set("n", "/", function()
+		if stats.get_active_tab() == 6 then
+			tab_modules[6].on_key("/", refresh)
+		end
 	end, opts)
 
 	for i = 1, 6 do
