@@ -47,7 +47,8 @@ local function count_week_coding_days(daily_activity)
 	return days_coded
 end
 
-function M.render(stats, width, height)
+function M.render(stats, width)
+	stats = require("codeme.util").apply_privacy_mask(stats)
 	local lines = {}
 
 	local this_week = stats.this_week or {}

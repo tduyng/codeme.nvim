@@ -7,6 +7,28 @@ local last_heartbeat = {}
 local last_git_diff = {}
 local COOLDOWN = 120 -- Only send heartbeat every 2 minutes per file
 
+---Check if a string matches any pattern in a list (Smart glob support)
+---@param str string
+---@param patterns string[]
+---@return boolean
+local function matches_any(str, patterns)
+	if not str or not patterns or #patterns == 0 then
+		return false
+	end
+	for _, p in ipairs(patterns) do
+		-- Simple glob conversion: * -> .* and escape magic chars
+		local pattern = p
+		if not p:match("[%^%$%%]") then
+			pattern = "^" .. p:gsub("%.", "%%."):gsub("%*", ".*") .. "$"
+		end
+
+		if str:match(pattern) then
+			return true
+		end
+	end
+	return false
+end
+
 ---Check if buffer should be tracked
 ---@param bufnr number
 ---@param filepath string
@@ -21,8 +43,26 @@ local function should_track(bufnr, filepath)
 	end
 
 	local skip_fts = { "NvimTree", "neo-tree", "dashboard", "help", "qf", "TelescopePrompt", "oil", "noice", "notify" }
-	if vim.tbl_contains(skip_fts, vim.bo[bufnr].filetype) then
+	local filetype = vim.bo[bufnr].filetype
+	if vim.tbl_contains(skip_fts, filetype) then
 		return false
+	end
+
+	-- Expert Ignore Rules: Tracking Filters
+	local ok, codeme = pcall(require, "codeme")
+	if ok then
+		local ignores = codeme.get_config().ignores or {}
+		local filters = ignores.tracking or {}
+
+		if matches_any(filetype, filters.languages or {}) then
+			return false
+		end
+		if matches_any(filepath, filters.files or {}) then
+			return false
+		end
+		if matches_any(filepath, filters.projects or {}) then
+			return false
+		end
 	end
 
 	return true

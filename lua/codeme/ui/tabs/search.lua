@@ -25,7 +25,7 @@ local function fetch_day(refresh_fn)
 			if not data or (not data.date and not data.total_time) then
 				state.error = "Failed to fetch data"
 			else
-				state.data = data
+				state.data = util.apply_privacy_mask(data)
 			end
 			refresh_fn()
 		end)

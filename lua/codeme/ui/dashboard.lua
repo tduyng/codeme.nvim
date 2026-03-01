@@ -44,6 +44,7 @@ end
 local function render_dashboard(stat_data)
 	-- Strip every vim.NIL from the backend payload once here.
 	stat_data = util.sanitize(stat_data) or {}
+	stat_data = util.apply_privacy_mask(stat_data)
 
 	local buf = stats.get_buf()
 	local win = stats.get_win()
@@ -114,7 +115,7 @@ end
 ---Show dashboard window
 ---@param stat_data table
 function M.show_window(stat_data)
-    -- ... (rest of the function stays same until keymaps)
+	-- ... (rest of the function stays same until keymaps)
 
 	-- Create buffer
 	local buf = vim.api.nvim_create_buf(false, true)
@@ -221,11 +222,11 @@ function M.show_window(stat_data)
 			if current_win and vim.api.nvim_win_is_valid(current_win) then
 				local new_width = math.min(160, math.floor(vim.o.columns * 0.95))
 				local new_height = math.min(60, math.floor(vim.o.lines * 0.85))
-				
+
 				-- Ensure minimum size to prevent crash
 				new_width = math.max(40, new_width)
 				new_height = math.max(10, new_height)
-				
+
 				pcall(vim.api.nvim_win_set_config, current_win, {
 					relative = "editor",
 					width = new_width,

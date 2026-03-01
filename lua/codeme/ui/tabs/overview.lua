@@ -3,7 +3,8 @@ local renderer = require("codeme.ui.renderer")
 
 local M = {}
 
-function M.render(stats, width, height)
+function M.render(stats, width)
+	stats = require("codeme.util").apply_privacy_mask(stats)
 	local lines = {}
 	local today = stats.today or {}
 	local today_time = today.total_time or 0
@@ -172,16 +173,25 @@ function M.render(stats, width, height)
 
 	-- Streak visualization (Restored prominence)
 	local flame_display
-	if current_streak >= 30 then flame_display = "🔥🔥🔥🔥🔥"
-	elseif current_streak >= 14 then flame_display = "🔥🔥🔥"
-	elseif current_streak >= 7 then flame_display = "🔥🔥"
-	elseif current_streak > 0 then flame_display = "🔥"
-	else flame_display = "💤" end
+	if current_streak >= 30 then
+		flame_display = "🔥🔥🔥🔥🔥"
+	elseif current_streak >= 14 then
+		flame_display = "🔥🔥🔥"
+	elseif current_streak >= 7 then
+		flame_display = "🔥🔥"
+	elseif current_streak > 0 then
+		flame_display = "🔥"
+	else
+		flame_display = "💤"
+	end
 
 	table.insert(lines, {
 		{ "  " .. flame_display .. "  ", "normal" },
 		{ string.format("%d DAY STREAK", current_streak), "exyellow" },
-		{ longest_streak > current_streak and string.format("  •  Best: %d days", longest_streak) or "  •  NEW RECORD!", "commentfg" },
+		{
+			longest_streak > current_streak and string.format("  •  Best: %d days", longest_streak) or "  •  NEW RECORD!",
+			"commentfg",
+		},
 	})
 	table.insert(lines, {})
 

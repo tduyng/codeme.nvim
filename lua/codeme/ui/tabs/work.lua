@@ -3,7 +3,8 @@ local renderer = require("codeme.ui.renderer")
 
 local M = {}
 
-function M.render(stats, width, height)
+function M.render(stats, width)
+	stats = require("codeme.util").apply_privacy_mask(stats)
 	local lines = {}
 
 	table.insert(lines, {})

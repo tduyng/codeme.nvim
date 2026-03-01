@@ -4,10 +4,49 @@ local M = {}
 local default_config = {
 	auto_track = true,
 	verbose = false,
-	goals = {
-		daily_hours = 4,
-		daily_lines = 500,
+	ignores = {
+		-- Tracking: These never leave Neovim (not saved to DB)
+		tracking = {
+			languages = {
+				"gitcommit",
+				"gitrebase",
+				"help",
+				"qf",
+				"netrw",
+				"log",
+				"checkhealth",
+				"man",
+				"TelescopePrompt",
+				"vim", -- cmdwin
+			},
+			files = {
+				"%.git/.*",
+				"%.log$",
+				"%.tmp$",
+				"%.swp$",
+				"%.swo$",
+				"%.DS_Store$",
+				"undo/.*",
+				"tags$",
+			},
+			projects = {
+				"temp%-.*",
+				"test%-.*",
+			},
+		},
+		-- Dashboard: These are masked or hidden in the UI
+		dashboard = {
+			projects = {}, -- User specific: e.g. { "secret-.*" }
+			files = {}, -- User specific
+			languages = {
+				"gitignore",
+				"gitconfig",
+				"sshconfig",
+			},
+		},
 	},
+	daily_hours = 4,
+	daily_lines = 500,
 }
 
 local config = vim.deepcopy(default_config)

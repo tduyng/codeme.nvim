@@ -3,7 +3,8 @@ local renderer = require("codeme.ui.renderer")
 
 local M = {}
 
-function M.render(stats, width, height)
+function M.render(stats, width)
+	stats = require("codeme.util").apply_privacy_mask(stats)
 	local lines = {}
 	local today = stats.today or {}
 	local today_sessions = today.sessions or {}
@@ -105,7 +106,11 @@ function M.render(stats, width, height)
 			end
 			local start_period, start_icon = get_period(start_hour)
 			local end_period, end_icon = get_period(end_hour)
-			local story = { { "  📖 ", "exgreen" }, { "You started in the ", "commentfg" }, { start_period .. " " .. start_icon, "normal" } }
+			local story = {
+				{ "  📖 ", "exgreen" },
+				{ "You started in the ", "commentfg" },
+				{ start_period .. " " .. start_icon, "normal" },
+			}
 			if start_period ~= end_period then
 				table.insert(story, { " and continued into the ", "commentfg" })
 				table.insert(story, { end_period .. " " .. end_icon, "normal" })

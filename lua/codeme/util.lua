@@ -27,8 +27,10 @@ end
 ---@param w number
 ---@return string
 function M.pad(s, w)
-	local diff = w - vim.api.nvim_strwidth(s or "")
-	return (s or "") .. (diff > 0 and string.rep(" ", diff) or "")
+	local str = tostring(s or "")
+	local current_w = vim.api.nvim_strwidth(str)
+	local diff = tonumber(w or 0) - current_w
+	return str .. (diff > 0 and string.rep(" ", diff) or "")
 end
 
 ---Format number with commas
@@ -179,9 +181,156 @@ function M.top_items(list, max)
 	return table.concat(result, ", ")
 end
 
+---Check if a string matches any pattern in a list (Expert Glob Engine)
+---@param str string
+---@param patterns string[]
+---@param anchored boolean? If true, matches entire string. If false, matches substring.
+---@return boolean
+function M.matches_any(str, patterns, anchored)
+	if not str or type(str) ~= "string" or not patterns or #patterns == 0 then
+		return false
+	end
+	local lower_str = str:lower()
+	for _, p in ipairs(patterns) do
+		if type(p) == "string" then
+			local lower_p = p:lower()
+			local lua_pattern
+
+			-- 1. Check if user provided a raw Lua pattern (contains %, ^, or $)
+			if p:match("[%^%$%%]") then
+				lua_pattern = lower_p
+			else
+				-- 2. Convert Glob to Lua Pattern
+				-- Escape magic chars EXCEPT *
+				lua_pattern = lower_p:gsub("([%(%)%.%+%-%?%[%]])", "%%%1")
+				-- Convert glob * to .*
+				lua_pattern = lua_pattern:gsub("%*", ".*")
+				-- Anchor to start and end for exact glob behavior if requested
+				if anchored then
+					lua_pattern = "^" .. lua_pattern .. "$"
+				end
+			end
+
+			if lower_str:match(lua_pattern) then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+---Apply privacy masking to stats data (Recursive & Aggressive)
+---@param data table The statistics payload
+---@return table Masked data
+function M.apply_privacy_mask(data)
+	if type(data) ~= "table" then
+		return data
+	end
+
+	local ok, codeme = pcall(require, "codeme")
+	if not ok then
+		return data
+	end
+
+	local config = codeme.get_config()
+	local ignores = config.ignores or {}
+	local dashboard_filters = ignores.dashboard or {}
+
+	local ignore_projects = dashboard_filters.projects or {}
+	local ignore_langs = dashboard_filters.languages or {}
+	local ignore_files = dashboard_filters.files or {}
+
+	-- Deep recursive traverser with context awareness
+	local function traverse(obj, key)
+		if type(obj) ~= "table" then
+			if type(obj) == "string" then
+				-- Check for project masking
+				-- We match strings in fields named 'name', 'project', 'main_project', OR inside lists (numeric keys)
+				local is_project_ctx = (
+					key == "name"
+					or key == "project"
+					or key == "main_project"
+					or key == "main_lang"
+					or type(key) == "number"
+				)
+				if is_project_ctx and M.matches_any(obj, ignore_projects, true) then
+					return "[Private Project]"
+				end
+
+				-- Check for language filtering
+				if
+					(key == "language" or key == "main_language" or key == "main_lang") and M.matches_any(obj, ignore_langs, true)
+				then
+					return "[Hidden]"
+				end
+
+				-- Check for file masking
+				if key == "file" and M.matches_any(obj, ignore_files, false) then
+					return "[Private File]"
+				end
+			end
+			return obj
+		end
+
+		-- Detect if this is a sequential array
+		local is_array = true
+		local max_idx = 0
+		for k, _ in pairs(obj) do
+			if type(k) ~= "number" then
+				is_array = false
+				break
+			end
+			max_idx = math.max(max_idx, k)
+		end
+
+		local new_obj = {}
+		for k, v in pairs(obj) do
+			if type(k) == "string" and M.matches_any(k, ignore_projects, true) then
+				-- skip this project entirely
+			else
+				local val = v
+				-- Filter out ignored languages from arrays (e.g. stats.languages)
+				if k == "languages" and type(v) == "table" then
+					local filtered = {}
+					for _, item in ipairs(v) do
+						local name = type(item) == "table" and item.name or item
+						if not (type(name) == "string" and M.matches_any(name, ignore_langs, true)) then
+							table.insert(filtered, traverse(item, k))
+						end
+					end
+					val = filtered
+				else
+					-- Standard Recursion
+					val = traverse(v, k)
+				end
+
+				new_obj[k] = val
+			end
+		end
+
+		-- Rebuild array to ensure sequential indices
+		if is_array and max_idx > 0 then
+			local arr = {}
+			local i = 1
+			for idx = 1, max_idx do
+				if new_obj[idx] ~= nil then
+					arr[i] = new_obj[idx]
+					i = i + 1
+				end
+			end
+			return arr
+		end
+
+		return new_obj
+	end
+
+	return traverse(data, nil)
+end
+
+---Sanitize data (handles vim.NIL)
+---@param value any
+---@return any
 function M.sanitize(value)
-	-- vim.NIL is the sentinel that vim.json.decode uses for JSON null.
-	-- It is neither nil nor false, so `value or {}` does NOT catch it.
 	if value == vim.NIL then
 		return nil
 	end

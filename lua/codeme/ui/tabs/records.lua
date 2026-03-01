@@ -3,7 +3,8 @@ local renderer = require("codeme.ui.renderer")
 
 local M = {}
 
-function M.render(stats, width, height)
+function M.render(stats, width)
+	stats = require("codeme.util").apply_privacy_mask(stats)
 	local lines = {}
 
 	-- Helper for safe padding (local to avoid nil field errors)
@@ -168,7 +169,10 @@ function M.render(stats, width, height)
 	end
 	local ls = records.longest_session or {}
 	if ls.duration and ls.duration > 0 then
-		table.insert(record_list, { "⏱️ Longest Session", util.format_duration(ls.duration), util.format_date(ls.date or "") })
+		table.insert(
+			record_list,
+			{ "⏱️ Longest Session", util.format_duration(ls.duration), util.format_date(ls.date or "") }
+		)
 	end
 	local hdo = records.highest_daily_output or {}
 	if hdo.lines and hdo.lines > 0 then
@@ -196,15 +200,36 @@ function M.render(stats, width, height)
 		table.insert(lines, { { "  📊 Fun Facts", "exgreen" } })
 		table.insert(lines, {})
 		if earliest_start.time then
-			table.insert(lines, { { "  🌅 Early Bird: ", "commentfg" }, { earliest_start.time, "exgreen" }, { " (" .. (earliest_start.date or "") .. ")", "commentfg" } })
+			table.insert(
+				lines,
+				{
+					{ "  🌅 Early Bird: ", "commentfg" },
+					{ earliest_start.time, "exgreen" },
+					{ " (" .. (earliest_start.date or "") .. ")", "commentfg" },
+				}
+			)
 		end
 		if latest_end.time then
-			table.insert(lines, { { "  🌙 Night Owl: ", "commentfg" }, { latest_end.time, "exgreen" }, { " (" .. (latest_end.date or "") .. ")", "commentfg" } })
+			table.insert(
+				lines,
+				{
+					{ "  🌙 Night Owl: ", "commentfg" },
+					{ latest_end.time, "exgreen" },
+					{ " (" .. (latest_end.date or "") .. ")", "commentfg" },
+				}
+			)
 		end
 		if most_languages_day and most_languages_day.date ~= "" then
 			local langs_count = util.safe_length(most_languages_day.languages)
 			if langs_count > 0 then
-				table.insert(lines, { { "  🌍 Polyglot Day: ", "commentfg" }, { langs_count .. " languages", "exgreen" }, { " (" .. most_languages_day.date .. ")", "commentfg" } })
+				table.insert(
+					lines,
+					{
+						{ "  🌍 Polyglot Day: ", "commentfg" },
+						{ langs_count .. " languages", "exgreen" },
+						{ " (" .. most_languages_day.date .. ")", "commentfg" },
+					}
+				)
 			end
 		end
 		table.insert(lines, {})
@@ -218,10 +243,16 @@ function M.render(stats, width, height)
 	local challenges = {}
 
 	if mpd.time and today_time > 0 and mpd.time > today_time then
-		table.insert(challenges, { icon = "🎯", text = util.format_duration(mpd.time - today_time) .. " to beat your best day", hl = "exyellow" })
+		table.insert(
+			challenges,
+			{ icon = "🎯", text = util.format_duration(mpd.time - today_time) .. " to beat your best day", hl = "exyellow" }
+		)
 	end
 	if ls.duration then
-		table.insert(challenges, { icon = "⏰", text = "Can you beat " .. util.format_duration(ls.duration) .. " in one session?", hl = "normal" })
+		table.insert(
+			challenges,
+			{ icon = "⏰", text = "Can you beat " .. util.format_duration(ls.duration) .. " in one session?", hl = "normal" }
+		)
 	end
 	if #challenges > 0 then
 		for _, ch in ipairs(challenges) do
