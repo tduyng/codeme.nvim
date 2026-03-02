@@ -1,4 +1,3 @@
-local util = require("codeme.util")
 local M = {}
 
 ---String width (unicode-aware)
@@ -245,7 +244,13 @@ function M.hbox(arg1, arg2, arg3)
 		-- Old: hbox(left, right, gap)
 		blocks = { arg1, arg2 }
 		gap = tonumber(arg3) or 4
-	elseif type(arg1) == "table" and arg1[1] and type(arg1[1]) == "table" and arg1[1][1] and type(arg1[1][1]) == "table" then
+	elseif
+		type(arg1) == "table"
+		and arg1[1]
+		and type(arg1[1]) == "table"
+		and arg1[1][1]
+		and type(arg1[1][1]) == "table"
+	then
 		-- New: hbox({b1, b2, ...}, gap)
 		blocks = arg1
 		gap = tonumber(arg2) or 4

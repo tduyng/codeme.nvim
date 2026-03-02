@@ -136,7 +136,10 @@ function M.render(stats, width, height)
 	local identity_lines = {
 		{ { "Main Project:  ", "commentfg" }, { data.main_project or "-", "exblue" } },
 		{ { "Main Language: ", "commentfg" }, { data.main_language or "-", "excyan" } },
-		{ { "Active Hours:  ", "commentfg" }, { (data.start_time or "??") .. " to " .. (data.end_time or "??"), "normal" } },
+		{
+			{ "Active Hours:  ", "commentfg" },
+			{ (data.start_time or "??") .. " to " .. (data.end_time or "??"), "normal" },
+		},
 	}
 	local identity_card = renderer.card("Project Identity", identity_lines, 45, "exblue")
 
@@ -184,7 +187,10 @@ function M.render(stats, width, height)
 		table.insert(lines, {})
 		local tbl = { { "Time", "Duration", "Projects" } }
 		for _, s in ipairs(sessions) do
-			table.insert(tbl, { s.start_time or "??", util.format_duration(s.duration or 0), util.top_items(s.projects or {}, 2) })
+			table.insert(
+				tbl,
+				{ s.start_time or "??", util.format_duration(s.duration or 0), util.top_items(s.projects or {}, 2) }
+			)
 		end
 		for _, l in ipairs(renderer.table(tbl, width - 10)) do
 			table.insert(lines, l)

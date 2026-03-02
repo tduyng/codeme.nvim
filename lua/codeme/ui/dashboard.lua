@@ -158,9 +158,9 @@ function M.show_window(stat_data)
 
 	-- Global refresh keymap
 	local function force_refresh()
-		backend.get_stats(false, function(stat_data)
-			stats.set_stats(stat_data)
-			render_dashboard(stat_data)
+		backend.get_stats(false, function(new_stat_data)
+			stats.set_stats(new_stat_data)
+			render_dashboard(new_stat_data)
 			trigger_on_enter()
 		end)
 	end
@@ -201,6 +201,11 @@ function M.show_window(stat_data)
 	end
 
 	local function close()
+		local ok, records_tab = pcall(require, "codeme.ui.tabs.records")
+		if ok and records_tab.teardown_hover then
+			records_tab.teardown_hover()
+		end
+
 		local win_handle = stats.get_win()
 		if win_handle and vim.api.nvim_win_is_valid(win_handle) then
 			vim.api.nvim_win_close(win_handle, true)

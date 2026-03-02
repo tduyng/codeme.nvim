@@ -187,33 +187,21 @@ end
 ---@param anchored boolean? If true, matches entire string. If false, matches substring.
 ---@return boolean
 function M.matches_any(str, patterns, anchored)
-	if not str or type(str) ~= "string" or not patterns or #patterns == 0 then
-		return false
-	end
 	local lower_str = str:lower()
 	for _, p in ipairs(patterns) do
-		if type(p) == "string" then
-			local lower_p = p:lower()
-			local lua_pattern
-
-			-- 1. Check if user provided a raw Lua pattern (contains %, ^, or $)
-			if p:match("[%^%$%%]") then
-				lua_pattern = lower_p
-			else
-				-- 2. Convert Glob to Lua Pattern
-				-- Escape magic chars EXCEPT *
-				lua_pattern = lower_p:gsub("([%(%)%.%+%-%?%[%]])", "%%%1")
-				-- Convert glob * to .*
-				lua_pattern = lua_pattern:gsub("%*", ".*")
-				-- Anchor to start and end for exact glob behavior if requested
-				if anchored then
-					lua_pattern = "^" .. lua_pattern .. "$"
-				end
+		local lower_p = p:lower()
+		local lua_pattern
+		if p:match("[%^%$%%]") then
+			lua_pattern = lower_p
+		else
+			lua_pattern = lower_p:gsub("([%(%)%.%+%-%?%[%]])", "%%%1")
+			lua_pattern = lua_pattern:gsub("%*", ".*")
+			if anchored then
+				lua_pattern = "^" .. lua_pattern .. "$"
 			end
-
-			if lower_str:match(lua_pattern) then
-				return true
-			end
+		end
+		if lower_str:match(lua_pattern) then
+			return true
 		end
 	end
 	return false
@@ -254,19 +242,19 @@ function M.apply_privacy_mask(data)
 					or type(key) == "number"
 				)
 				if is_project_ctx and M.matches_any(obj, ignore_projects, true) then
-					return "[Private Project]"
+					return "[private]"
 				end
 
 				-- Check for language filtering
 				if
 					(key == "language" or key == "main_language" or key == "main_lang") and M.matches_any(obj, ignore_langs, true)
 				then
-					return "[Hidden]"
+					return "[hidden]"
 				end
 
 				-- Check for file masking
 				if key == "file" and M.matches_any(obj, ignore_files, false) then
-					return "[Private File]"
+					return "[private]"
 				end
 			end
 			return obj
@@ -285,10 +273,8 @@ function M.apply_privacy_mask(data)
 
 		local new_obj = {}
 		for k, v in pairs(obj) do
-			if type(k) == "string" and M.matches_any(k, ignore_projects, true) then
-				-- skip this project entirely
-			else
-				local val = v
+			if not (type(k) == "string" and M.matches_any(k, ignore_projects, true)) then
+				local val
 				-- Filter out ignored languages from arrays (e.g. stats.languages)
 				if k == "languages" and type(v) == "table" then
 					local filtered = {}
