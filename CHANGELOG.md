@@ -1,3 +1,15 @@
+## [0.1.0](https://github.com/tduyng/codeme.nvim/compare/v0.0.4..v0.1.0) - 2026-03-03
+
+### Features
+
+- Add hover on achievements - ([99e3106](https://github.com/tduyng/codeme.nvim/commit/99e31064679cfcb76d31d9189283976c79da56a5))
+- Add options to ignore projects and filetypes to show - ([382cd0a](https://github.com/tduyng/codeme.nvim/commit/382cd0abbc2b9b5d70186b718dfa13a149a56196))
+- Auto resize and make the tab size better - ([2d77e50](https://github.com/tduyng/codeme.nvim/commit/2d77e50a55a61873f8868468a260f11ebc9ed2e1))
+- Add tab search activities by date - ([8e6cc4b](https://github.com/tduyng/codeme.nvim/commit/8e6cc4b589685c1708e53040c45947d4eb01fd6d))
+
+### Miscellaneous Tasks
+
+- Set cache ttl for 5s - ([c650419](https://github.com/tduyng/codeme.nvim/commit/c6504191c6b33114c057d4211ae574103594bd43))
 ## [0.0.4](https://github.com/tduyng/codeme.nvim/compare/v0.0.3..v0.0.4) - 2026-02-19
 
 ### Bug Fixes
