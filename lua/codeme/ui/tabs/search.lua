@@ -158,9 +158,34 @@ function M.render(stats, width, height)
 	table.insert(lines, {})
 
 	-- Hourly activity
-	local hourly = data.hourly_activity or {}
+	local hourly_raw = {}
+	for i = 1, 24 do
+		hourly_raw[i] = 0
+	end
+	
+	-- Handle both formats: array of numbers OR array of {hour, duration} objects
+	local hourly_data = data.hourly_activity or {}
+	if #hourly_data > 0 then
+		local first = hourly_data[1]
+		if type(first) == "table" and first.hour ~= nil then
+			-- Format: [{hour: 0, duration: 123}, ...]
+			for _, item in ipairs(hourly_data) do
+				if item.hour and item.hour >= 0 and item.hour < 24 then
+					hourly_raw[item.hour + 1] = item.duration or 0
+				end
+			end
+		else
+			-- Format: [0, 123, 456, ...] (direct 24-element array)
+			for i, v in ipairs(hourly_data) do
+				if i <= 24 then
+					hourly_raw[i] = tonumber(v) or 0
+				end
+			end
+		end
+	end
+
 	local has_hourly = false
-	for _, v in ipairs(hourly) do
+	for _, v in ipairs(hourly_raw) do
 		if v > 0 then
 			has_hourly = true
 			break
@@ -170,13 +195,18 @@ function M.render(stats, width, height)
 	if has_hourly then
 		table.insert(lines, { { "  ⏰ Hourly Distribution", "exgreen" } })
 		table.insert(lines, {})
-		local hist_line = { { "  ", "normal" } }
-		local hist_segs = renderer.histogram(hourly, 0, 1, "exblue")
-		for _, s in ipairs(hist_segs) do
+		
+		local hist_line = { { "  ", "commentfg" } }
+		for _, s in ipairs(renderer.histogram(hourly_raw, 0, 1, "exblue", 2)) do
 			table.insert(hist_line, s)
 		end
 		table.insert(lines, hist_line)
-		table.insert(lines, { { "  00  02  04  06  08  10  12  14  16  18  20  22", "commentfg" } })
+		
+		local label_line = { { "  ", "commentfg" } }
+		for h = 0, 23 do
+			table.insert(label_line, { string.format("%02d ", h), "commentfg" })
+		end
+		table.insert(lines, label_line)
 		table.insert(lines, {})
 	end
 

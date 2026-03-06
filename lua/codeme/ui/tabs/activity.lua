@@ -43,15 +43,15 @@ function M.render(stats, width, height)
 	end
 
 	local hist_line = { { "  ", "commentfg" } }
-	for _, s in ipairs(renderer.histogram(hourly_raw, 0, 1, "exblue")) do
+	for _, s in ipairs(renderer.histogram(hourly_raw, 0, 1, "exblue", 2)) do
 		table.insert(hist_line, s)
 	end
 	table.insert(lines, hist_line)
 
 	local label_line = { { "  ", "commentfg" } }
 	for h = 0, 23 do
-		local display_h = (h + 2) % 24
-		table.insert(label_line, { string.format("%02d", display_h) .. " ", "commentfg" })
+		local display_h = h % 24
+		table.insert(label_line, { string.format("%02d ", display_h), "commentfg" })
 	end
 	table.insert(lines, label_line)
 
@@ -207,15 +207,19 @@ function M.render(stats, width, height)
 			meta = "[" .. lang_str .. "]"
 		end
 
-		-- Session line
+		local time_col = time_range .. string.rep(" ", math.max(0, 11 - #time_range))
+		local dur_str = util.format_duration(dur)
+		local dur_col = dur_str .. string.rep(" ", math.max(0, 6 - #dur_str))
+		local star_col = is_peak and "⭐" or "  "
+
 		local sess_line = {
 			{ "  " .. connector .. " ", "commentfg" },
-			{ time_range, "commentfg" },
+			{ time_col, "commentfg" },
 			{ "  ", "normal" },
-			{ util.format_duration(dur), is_peak and "exyellow" or "normal" },
-			{ is_peak and " ⭐" or "   ", "exyellow" },
-			{ "  ", "normal" },
+			{ dur_col, is_peak and "exyellow" or "normal" },
+			{ " " .. star_col .. " ", "exyellow" },
 		}
+
 		-- Mini bar
 		local filled = math.floor(pct / 100 * bar_w)
 		table.insert(sess_line, { string.rep("▪", filled), bar_hl })
@@ -226,7 +230,7 @@ function M.render(stats, width, height)
 		end
 		table.insert(lines, sess_line)
 
-		-- Break gap between sessions (only show if meaningful > 5 min)
+		-- Break gap
 		if not is_last then
 			local break_sec = session.break_after or 0
 			if break_sec >= 300 then
@@ -241,7 +245,6 @@ function M.render(stats, width, height)
 			end
 		end
 	end
-	table.insert(lines, {})
 
 	-- ── Summary bar (total confirmed) ─────────────────────────────────
 	table.insert(lines, {
