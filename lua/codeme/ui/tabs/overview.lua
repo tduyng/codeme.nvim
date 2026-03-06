@@ -164,7 +164,7 @@ function M.render(stats, width)
 	end
 	table.insert(lines, vol_line)
 
-	local label_line = { { "                ", "commentfg" } }
+	local label_line = { { "               ", "commentfg" } }
 	for _, label in ipairs({ "M", "T", "W", "T", "F", "S", "S" }) do
 		table.insert(label_line, { label .. " ", "commentfg" })
 	end

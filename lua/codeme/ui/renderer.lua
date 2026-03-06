@@ -318,11 +318,13 @@ end
 ---@param max_val number?
 ---@param height number? Max 1 currently supported for sparklines
 ---@param hl_group string?
+---@param spacing number? Number of spaces after each bar (default 1)
 ---@return table[] Segments
-function M.histogram(data, max_val, height, hl_group)
+function M.histogram(data, max_val, height, hl_group, spacing)
 	local blocks = { " ", " ", "▂", "▃", "▄", "▅", "▆", "▇", "█" }
 	local max = tonumber(max_val) or 0
 	local data_list = type(data) == "table" and data or {}
+	local bar_spacing = math.max(0, tonumber(spacing) or 1)
 
 	if max == 0 then
 		for _, v in ipairs(data_list) do
@@ -343,7 +345,7 @@ function M.histogram(data, max_val, height, hl_group)
 			level = 2
 		end
 		level = math.min(9, math.max(1, level))
-		table.insert(segs, { blocks[level] .. " ", hl_group or "exgreen" })
+		table.insert(segs, { blocks[level] .. string.rep(" ", bar_spacing), hl_group or "exgreen" })
 	end
 	return segs
 end
