@@ -47,7 +47,13 @@ function M.render(stats, width, height)
 		table.insert(hist_line, s)
 	end
 	table.insert(lines, hist_line)
-	table.insert(lines, { { "  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23", "commentfg" } })
+
+	local label_line = { { "  ", "commentfg" } }
+	for h = 0, 23 do
+		local display_h = (h + 2) % 24
+		table.insert(label_line, { string.format("%02d", display_h) .. " ", "commentfg" })
+	end
+	table.insert(lines, label_line)
 
 	-- Focus score inline
 	if focus_score > 0 then
