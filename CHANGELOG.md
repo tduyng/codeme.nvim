@@ -1,3 +1,9 @@
+## [0.1.1](https://github.com/tduyng/codeme.nvim/compare/v0.1.0..v0.1.1) - 2026-03-22
+
+### Bug Fixes
+
+- Align sessions column - ([fca0b0d](https://github.com/tduyng/codeme.nvim/commit/fca0b0da408d3eebd6dd3dc7cfa592abe839fdad))
+- Correct position activity hours - ([b85ccf2](https://github.com/tduyng/codeme.nvim/commit/b85ccf21e55208e121f36493a4579f14146b55e7))
 ## [0.1.0](https://github.com/tduyng/codeme.nvim/compare/v0.0.4..v0.1.0) - 2026-03-03
 
 ### Features
